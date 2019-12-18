@@ -24,11 +24,16 @@ type World interface { //TODO make it have pointer arguments?
 	GetRemainingTime() int64
 	GetPlayerHP() int
 	CastUnitSpell(unitId, pathId, index, spellId int) //Overload :( for spell?
-	CastAreaSpell(center Cell, spellId int)
+	CastAreaSpell(center Cell, spellId int)           //Overload
 	GetAreaSpellTargets(center Cell, spell Spell) []Unit
 	GetRemainingTurnsToUpgrade() int
 	GetRemainingTurnsToGetSpell() int
-	GetCastSpells() []Spell
-	GetDeployedUnits() []Unit
-	getActiveSpells(cell Cell) []Spell
+	GetCastAreaSpell(playerId int) CastAreaSpell
+	GetCastUnitSpell(playerId int) CastUnitSpell
+	GetDeployedUnits(playerId int) []Unit
+	GetActiveSpellsOnCell(cell Cell) []CastAreaSpell
+	GetUpgradeTokenNumber(playerId int) int
+	GetSpells() []Spell
+	GetReceivedSpell() Spell
+	GetFriendReceivedSpell() Spell
 }
