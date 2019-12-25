@@ -1,8 +1,8 @@
 package model
 
 type UnitSpell struct {
-	spell  Spell
-	typeId int
+	typeId     int
+	turnEffect int
 }
 
 func (unitSpell UnitSpell) GetTypeId() int {
@@ -12,6 +12,3 @@ func (unitSpell UnitSpell) GetTypeId() int {
 func (unitSpell UnitSpell) IsAreaSpell() bool {
 	return false
 }
-
-
-

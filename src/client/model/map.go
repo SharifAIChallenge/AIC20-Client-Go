@@ -1,8 +1,9 @@
 package model
 
 type Map struct {
-	width, height int
-	paths         []Path
-	units         []Unit
-	kings         []King
+	width  int `json:"rows"`
+	height int `json:"cols"`
+	paths  []Path
+	units  []Unit
+	kings  []King
 }

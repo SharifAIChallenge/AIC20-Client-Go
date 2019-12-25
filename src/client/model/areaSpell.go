@@ -1,12 +1,11 @@
 package model
 
 type AreaSpell struct {
-	spell      Spell
-	rng        int
-	power      int
-	turnEffect int
-	isDamaging bool
 	typeId     int
+	turnEffect int
+	rng        int `json:"range"`
+	power      int
+	isDamaging bool
 }
 
 func (areaSpell AreaSpell) GetTypeId() int {
@@ -16,5 +15,3 @@ func (areaSpell AreaSpell) GetTypeId() int {
 func (areaSpell AreaSpell) IsAreaSpell() bool {
 	return true
 }
-
-

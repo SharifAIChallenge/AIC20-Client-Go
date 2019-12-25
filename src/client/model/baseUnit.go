@@ -1,6 +1,11 @@
 package model
 
 type BaseUnit struct {
-	typ, maxHp, attack, rng, target int //TODO handle enums?
-	isFlying, isMultiple            bool
+	typeId     int
+	maxHp      int
+	baseAttack int
+	baseRange  int
+	target     string
+	isFlying   bool
+	isMultiple bool
 }

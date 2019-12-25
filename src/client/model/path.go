@@ -2,5 +2,5 @@ package model
 
 type Path struct {
 	cells  []Cell
-	pathId int
+	pathId int `json:"id"`
 }

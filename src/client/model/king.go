@@ -1,7 +1,11 @@
 package model
 
 type King struct {
-	center                    Cell
-	hp, attack, rng, playerID int
-	isAlive                   bool
+	playerId int
+	center   Cell
+	hp       int
+	attack   int
+	rng      int  `json:"range"`
+	isAlive  bool //TODO make a method?
+	//TODO isYou,isYourFriend?
 }
