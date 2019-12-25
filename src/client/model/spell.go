@@ -1,5 +1,6 @@
 package model
 
-type Spell struct {
-	turnEffect, typ int
+type Spell interface {
+	GetTypeId() int
+	IsAreaSpell() bool
 }

@@ -1,7 +1,7 @@
 package model
 
 type World interface { //TODO make it have pointer arguments?
-	ChooseDeck(...interface{}) //TODO list of heroNames(enum) or list of ints
+	ChooseDeck(heroIds []int) //TODO list of heroNames(enum) or list of ints
 	GetMyId() int
 	GetFriendId() int
 	GetPlayerPosition(playerId int) Cell

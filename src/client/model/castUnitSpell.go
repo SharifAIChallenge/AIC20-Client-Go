@@ -1,6 +1,9 @@
 package model
 
 type CastUnitSpell struct {
-	unitId int
-	target Cell
+	typeId   int
+	casterId int
+	unitId   int
+	pathId   int
+	target   Cell
 }

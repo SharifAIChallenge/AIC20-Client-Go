@@ -1,6 +1,7 @@
 package model
 
 type King struct {
-	center                           Cell
-	hp, level, attack, rng, playerID int
+	center                    Cell
+	hp, attack, rng, playerID int
+	isAlive                   bool
 }
