@@ -13,7 +13,7 @@ type World interface { //TODO make it have pointer arguments?
 	GetPlayerUnits(playerId int) []Unit
 	GetCellUnits(cell Cell) []Unit
 	GetShortestPathToCell(playerId int, cell Cell) Path
-	GetMaxAP(playerId int) int
+	GetMaxAP() int
 	GetRemainingAP(playerId int) int
 	GetHand() []Unit
 	GetDeck() []Unit
@@ -22,7 +22,7 @@ type World interface { //TODO make it have pointer arguments?
 	GetMaxTurns() int
 	GetTurnTimeout() int64
 	GetRemainingTime() int64
-	GetPlayerHP() int
+	GetPlayerHP(playerId int) int
 	CastUnitSpell(unitId, pathId, index, spellId int) //Overload :( for spell?
 	CastAreaSpell(center Cell, spellId int)           //Overload
 	GetAreaSpellTargets(center Cell, spell Spell) []Unit

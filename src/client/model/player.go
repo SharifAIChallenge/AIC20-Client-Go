@@ -8,6 +8,6 @@ type Player struct {
 	hand          []Unit
 	spells        []Spell
 	acquiredSpell int
-	isAlive       bool
+	isAlive       bool //TODO remove? duplicate also in king
 	king          King
 }
