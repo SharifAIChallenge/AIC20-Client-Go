@@ -1,9 +1,18 @@
 package model
 
 type Unit struct {
-	baseUnit                                                   BaseUnit
-	cell                                                       Cell
-	unitId, hp, playerId, damageLevel, rangeLevel, attack, rng int
-	path                                                       Path //TODO pathid or pointer to path?
-	isHasted, wasDamageUpgraded, wasRangeUpgraded              bool
+	unitId            int
+	playerId          int
+	pathId            int
+	baseUnit          BaseUnit
+	cell              Cell
+	hp                int
+	damageLevel       int
+	rangeLevel        int
+	attack            int
+	rng               int `json:"range"`
+	isHasted          bool
+	isClone           bool
+	wasDamageUpgraded bool
+	wasRangeUpgraded  bool
 }

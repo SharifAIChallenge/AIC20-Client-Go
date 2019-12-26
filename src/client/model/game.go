@@ -51,7 +51,9 @@ func (game *Game) HandleInitMessage(msg Message) {
 	}
 }
 func (game *Game) HandleTurnMessage(msg Message) {
-	//TODO
+	root := msg.Args[0]
+	game.currentTurn = root["currentTurn"].(int)
+	game.players[game.myId].deck = root["deck"].([]int)
 }
 func (game *Game) ChooseDeck(heroIds []int) {
 	//TODO send message
@@ -59,6 +61,14 @@ func (game *Game) ChooseDeck(heroIds []int) {
 func (game *Game) PlayUnit(typeId, pathId int) int {
 	panic("implement me")
 }
+func (game *Game) CastUnitSpell(unitId, pathId, index, spellId int) {
+	panic("implement me")
+}
+
+func (game *Game) CastAreaSpell(center Cell, spellId int) {
+	panic("implement me")
+}
+
 func (game *Game) getFriendId(playerId int) int {
 	return playerId ^ 2 //TODO make sure this is valid
 }
@@ -187,24 +197,16 @@ func (game *Game) GetPlayerHP(playerId int) int {
 	return game.players[playerId].king.hp
 }
 
-func (game *Game) CastUnitSpell(unitId, pathId, index, spellId int) {
-	panic("implement me")
-}
-
-func (game *Game) CastAreaSpell(center Cell, spellId int) {
-	panic("implement me")
-}
-
 func (game *Game) GetAreaSpellTargets(center Cell, spell Spell) []Unit {
 	panic("implement me")
 }
 
 func (game *Game) GetRemainingTurnsToUpgrade() int {
-	panic("implement me")
+	return game.gameConstants.turnsToUpgrade - game.currentTurn%game.gameConstants.turnsToUpgrade
 }
 
 func (game *Game) GetRemainingTurnsToGetSpell() int {
-	panic("implement me")
+	return game.gameConstants.turnsToSpell - game.currentTurn%game.gameConstants.turnsToSpell
 }
 
 func (game *Game) GetCastAreaSpell(playerId int) CastAreaSpell {
@@ -219,7 +221,7 @@ func (game *Game) GetDeployedUnits(playerId int) []Unit {
 	panic("implement me")
 }
 
-func (game *Game) GetActiveSpellsOnCell(cell Cell) []CastAreaSpell {
+func (game *Game) GetActiveSpellsOnCell(cell Cell) []CastAreaSpell { //TODO Delete? or active abilities on units
 	panic("implement me")
 }
 
