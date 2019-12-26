@@ -15,7 +15,7 @@ type Game struct {
 	castAreaSpells [4][]CastAreaSpell
 	castUnitSpells [4][]CastUnitSpell
 
-	gotRangeUpgrade        bool
+	gotRangeUpgrade         bool
 	gotDamageUpgrade        bool
 	availableRangeUpgrades  int
 	availableDamageUpgrades int
@@ -97,11 +97,11 @@ func (game *Game) HandleTurnMessage(msg Message) {
 		tmpSpells = append(tmpSpells, game.getSpellById(spellId))
 	}
 	game.players[game.friendId].spells = tmpSpells
-	game.gotRangeUpgrade=root["gotRangeUpgrade"].(bool)
-	game.gotDamageUpgrade=root["gotDamageUpgrade"].(bool)
-	game.availableRangeUpgrades=root["availableRangeUpgrades"].(int)
-	game.availableDamageUpgrades=root["availableDamageUpgrades"].(int)
-	game.remainingAP=root["remainingAP"].(int)
+	game.gotRangeUpgrade = root["gotRangeUpgrade"].(bool)
+	game.gotDamageUpgrade = root["gotDamageUpgrade"].(bool)
+	game.availableRangeUpgrades = root["availableRangeUpgrades"].(int)
+	game.availableDamageUpgrades = root["availableDamageUpgrades"].(int)
+	game.remainingAP = root["remainingAP"].(int)
 }
 
 func (game *Game) getSpellById(typeId int) Spell {
@@ -245,11 +245,11 @@ func (game *Game) GetRemainingAP(playerId int) int {
 	return game.players[playerId].ap
 }
 
-func (game *Game) GetHand() []Unit {
+func (game *Game) GetHand() []int {
 	return game.players[game.myId].hand
 }
 
-func (game *Game) GetDeck() []Unit {
+func (game *Game) GetDeck() []int {
 	return game.players[game.myId].deck
 }
 

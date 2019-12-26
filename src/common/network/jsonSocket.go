@@ -20,16 +20,16 @@ func NewJsonSocket(host string, port int) *JsonSocket {
 	return &JsonSocket{socket: socket}
 }
 
-func (jsonSocket JsonSocket) close() {
+func (jsonSocket JsonSocket) Close() {
 	jsonSocket.socket.Close()
 }
 
-func (jsonSocket JsonSocket) send(msg Message) {
+func (jsonSocket JsonSocket) Send(msg Message) {
 	js, _ := json.Marshal(msg) //TODO should we convert to utf8 or is it okay already?
 	jsonSocket.socket.Write(append(js, byte('\000')))
 }
 
-func (jsonSocket JsonSocket) get() interface{} {
+func (jsonSocket JsonSocket) Get() interface{} {
 	js := make([]byte, 1000)
 	if jsonSocket.reader == nil {
 		jsonSocket.reader = bufio.NewReader(jsonSocket.socket)

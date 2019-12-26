@@ -15,8 +15,8 @@ type World interface { //TODO make it have pointer arguments?
 	GetShortestPathToCell(playerId int, cell Cell) Path
 	GetMaxAP() int
 	GetRemainingAP(playerId int) int
-	GetHand() []Unit
-	GetDeck() []Unit
+	GetHand() []int
+	GetDeck() []int
 	PlayUnit(typeId, pathId int) int
 	GetCurrentTurn() int
 	GetMaxTurns() int
