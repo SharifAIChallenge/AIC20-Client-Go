@@ -7,7 +7,7 @@ type Player struct {
 	deck          []int //TODO make it a unit array
 	hand          []int
 	spells        []Spell
-	acquiredSpell int
+	receivedSpell int
 	isAlive       bool //TODO remove? duplicate also in king
 	king          King
 }

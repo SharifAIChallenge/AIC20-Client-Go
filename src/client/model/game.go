@@ -15,7 +15,7 @@ type Game struct {
 	castAreaSpells [4][]CastAreaSpell
 	castUnitSpells [4][]CastUnitSpell
 
-	gotRangeUpgrade        bool
+	gotRangeUpgrade         bool
 	gotDamageUpgrade        bool
 	availableRangeUpgrades  int
 	availableDamageUpgrades int
@@ -61,6 +61,14 @@ func (game *Game) HandleTurnMessage(msg Message) {
 		game.players[playerId].king.isAlive = king.(map[string]interface{})["isAlive"].(bool)
 		game.players[playerId].king.hp = king.(map[string]interface{})["hp"].(int)
 	}
+
+	game.mp.units = []Unit{}
+	for i := 0; i < 4; i++ {
+		game.playerUnits[i]=[]Unit{}
+		game.castUnitSpells[i]=[]CastUnitSpell{}
+		game.castAreaSpells[i]=[]CastAreaSpell{}
+	}
+
 	units := root["units"].([]interface{}) // get baseUnit by typeId
 	for _, unit := range units {
 		typeId := unit.(map[string]interface{})["typeId"].(int)
@@ -83,8 +91,8 @@ func (game *Game) HandleTurnMessage(msg Message) {
 			game.castAreaSpells[playerId] = append(game.castAreaSpells[playerId], castSpell.(CastAreaSpell))
 		}
 	}
-	game.players[game.myId].acquiredSpell = root["acquiredSpell"].(int) /*TODO*/ //Typo aquired
-	game.players[game.friendId].acquiredSpell = root["friendAcquiredSpell"].(int)
+	game.players[game.myId].receivedSpell = root["receivedSpell"].(int)
+	game.players[game.friendId].receivedSpell = root["friendReceivedSpell"].(int)
 	var tmpSpells []Spell
 	mySpells := root["mySpells"].([]int)
 	for _, spellId := range mySpells {
@@ -97,11 +105,11 @@ func (game *Game) HandleTurnMessage(msg Message) {
 		tmpSpells = append(tmpSpells, game.getSpellById(spellId))
 	}
 	game.players[game.friendId].spells = tmpSpells
-	game.gotRangeUpgrade=root["gotRangeUpgrade"].(bool)
-	game.gotDamageUpgrade=root["gotDamageUpgrade"].(bool)
-	game.availableRangeUpgrades=root["availableRangeUpgrades"].(int)
-	game.availableDamageUpgrades=root["availableDamageUpgrades"].(int)
-	game.remainingAP=root["remainingAP"].(int)
+	game.gotRangeUpgrade = root["gotRangeUpgrade"].(bool)
+	game.gotDamageUpgrade = root["gotDamageUpgrade"].(bool)
+	game.availableRangeUpgrades = root["availableRangeUpgrades"].(int)
+	game.availableDamageUpgrades = root["availableDamageUpgrades"].(int)
+	game.remainingAP = root["remainingAP"].(int)
 }
 
 func (game *Game) getSpellById(typeId int) Spell {
