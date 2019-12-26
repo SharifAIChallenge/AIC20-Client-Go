@@ -22,8 +22,9 @@ type Game struct {
 	availableRangeUpgrades  int
 	availableDamageUpgrades int
 
-	players        []Player
-	myId, friendId int
+	players []Player
+
+	myId, friendId, firstEnemy, secondEnemy int
 }
 
 func (game *Game) HandleInitMessage(msg Message) {
@@ -31,13 +32,13 @@ func (game *Game) HandleInitMessage(msg Message) {
 	game.gameConstants = root["gameConstants"].(GameConstants)
 	game.mp = root["map"].(Map)
 	for _, king := range game.mp.kings {
-		if king.isYou {
-			game.myId = king.playerId
-		} else if king.isYourFriend {
-			game.friendId = king.playerId
-		}
 		game.players[king.playerId] = Player{king: king, playerId: king.playerId}
 	}
+	game.myId = game.mp.kings[0].playerId
+	game.friendId = game.mp.kings[1].playerId
+	game.firstEnemy = game.mp.kings[2].playerId
+	game.secondEnemy = game.mp.kings[3].playerId
+
 	game.baseUnits = root["baseUnits"].([]BaseUnit)
 	spells := root["spells"].([]interface{})
 	for _, spell := range spells {
