@@ -1,6 +1,6 @@
 package model
 
 type Path struct {
-	cells  []Cell
-	pathId int `json:"id"`
+	cells  []Cell //TODO pointers instead?
+	pathId int    `json:"id"`
 }

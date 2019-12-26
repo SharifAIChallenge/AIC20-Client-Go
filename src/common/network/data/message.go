@@ -5,7 +5,7 @@ import "encoding/json"
 type Message struct {
 	Name string
 	Args []map[string]interface{}
-}
+} //TODO remove? make Args just a []interface{}?
 
 func NewMessage(name string, args ...interface{}) *Message {
 	var args1 = make([]map[string]interface{}, 0)
