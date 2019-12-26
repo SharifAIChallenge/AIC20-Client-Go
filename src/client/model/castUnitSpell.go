@@ -5,5 +5,5 @@ type CastUnitSpell struct {
 	casterId int
 	unitId   int
 	pathId   int
-	target   Cell
+	target   Cell `json:"cell"`
 }

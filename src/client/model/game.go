@@ -10,17 +10,16 @@ type Game struct {
 	areaSpells    []AreaSpell
 	unitSpells    []UnitSpell
 
-	currentTurn       int
-	playerUnits       [4][]Unit
-	myCastAreaSpells  []CastAreaSpell
-	myCastUnitSpells  []CastUnitSpell
-	oppCastAreaSpells []CastAreaSpell
-	oppCastUnitSpells []CastUnitSpell
+	currentTurn    int
+	playerUnits    [4][]Unit
+	castAreaSpells [4][]CastAreaSpell
+	castUnitSpells [4][]CastUnitSpell
 
-	gotRangedUpgrade        bool
+	gotRangeUpgrade        bool
 	gotDamageUpgrade        bool
 	availableRangeUpgrades  int
 	availableDamageUpgrades int
+	remainingAP             int
 
 	players []Player
 
@@ -55,7 +54,83 @@ func (game *Game) HandleTurnMessage(msg Message) {
 	root := msg.Args[0]
 	game.currentTurn = root["currentTurn"].(int)
 	game.players[game.myId].deck = root["deck"].([]int)
+	game.players[game.myId].hand = root["hand"].([]int)
+	kings := root["kings"].([]interface{})
+	for _, king := range kings {
+		playerId := king.(map[string]interface{})["playerId"].(int)
+		game.players[playerId].king.isAlive = king.(map[string]interface{})["isAlive"].(bool)
+		game.players[playerId].king.hp = king.(map[string]interface{})["hp"].(int)
+	}
+	units := root["units"].([]interface{}) // get baseUnit by typeId
+	for _, unit := range units {
+		typeId := unit.(map[string]interface{})["typeId"].(int)
+		playerId := unit.(map[string]interface{})["playerId"].(int)
+		baseUnit := game.getBaseUnitByTypeId(typeId)
+		tmpUnit := unit.(Unit)
+		tmpUnit.baseUnit = baseUnit
+		//tmpUnit.rng = unit.(map[string]interface{})["range"].(int)
+		game.playerUnits[playerId] = append(game.playerUnits[playerId], tmpUnit)
+		game.mp.units = append(game.mp.units, tmpUnit)
+		/*TODO*/ // add units to cells or to game
+	}
+	castSpells := root["castSpells"].([]interface{})
+	for _, castSpell := range castSpells {
+		typeId := castSpell.(map[string]interface{})["typeId"].(int)
+		playerId := castSpell.(map[string]interface{})["casterId"].(int)
+		if game.isUnitSpell(typeId) {
+			game.castUnitSpells[playerId] = append(game.castUnitSpells[playerId], castSpell.(CastUnitSpell))
+		} else {
+			game.castAreaSpells[playerId] = append(game.castAreaSpells[playerId], castSpell.(CastAreaSpell))
+		}
+	}
+	game.players[game.myId].acquiredSpell = root["acquiredSpell"].(int) /*TODO*/ //Typo aquired
+	game.players[game.friendId].acquiredSpell = root["friendAcquiredSpell"].(int)
+	var tmpSpells []Spell
+	mySpells := root["mySpells"].([]int)
+	for _, spellId := range mySpells {
+		tmpSpells = append(tmpSpells, game.getSpellById(spellId))
+	}
+	game.players[game.myId].spells = tmpSpells
+	tmpSpells = []Spell{}
+	friendSpells := root["friendSpells"].([]int)
+	for _, spellId := range friendSpells {
+		tmpSpells = append(tmpSpells, game.getSpellById(spellId))
+	}
+	game.players[game.friendId].spells = tmpSpells
+	game.gotRangeUpgrade=root["gotRangeUpgrade"].(bool)
+	game.gotDamageUpgrade=root["gotDamageUpgrade"].(bool)
+	game.availableRangeUpgrades=root["availableRangeUpgrades"].(int)
+	game.availableDamageUpgrades=root["availableDamageUpgrades"].(int)
+	game.remainingAP=root["remainingAP"].(int)
 }
+
+func (game *Game) getSpellById(typeId int) Spell {
+	for _, spell := range game.spells {
+		if spell.GetTypeId() == typeId {
+			return spell
+		}
+	}
+	return AreaSpell{} /*TODO*/ // WTF to do
+}
+
+func (game *Game) isUnitSpell(typeId int) bool {
+	for _, unitSpell := range game.unitSpells {
+		if unitSpell.typeId == typeId {
+			return true
+		}
+	}
+	return false
+}
+
+func (game *Game) getBaseUnitByTypeId(typeId int) BaseUnit {
+	for _, baseUnit := range game.baseUnits {
+		if baseUnit.typeId == typeId {
+			return baseUnit
+		}
+	}
+	return BaseUnit{} //TODO
+}
+
 func (game *Game) ChooseDeck(heroIds []int) {
 	//TODO send message
 }
