@@ -5,7 +5,7 @@ type Unit struct {
 	playerId          int
 	pathId            int
 	baseUnit          BaseUnit
-	cell              Cell
+	cell              Cell //TODO only pointer?( or empty cell)
 	hp                int
 	damageLevel       int
 	rangeLevel        int
