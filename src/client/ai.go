@@ -2,10 +2,11 @@ package main
 
 import "./model"
 
-func Pick(world model.World) {
+
+func pick(world model.World) {
 
 }
 
-func Turn(world model.World) {
+func turn(world model.World) {
 
 }

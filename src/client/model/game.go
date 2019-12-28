@@ -31,6 +31,11 @@ type Game struct {
 	sender func(message Message)
 }
 
+func NewGame(sender func(message Message)) *Game {
+	return &Game{sender: sender}
+}
+
+
 func (game *Game) HandleInitMessage(msg Message) {
 	root := msg.Args[0]
 	game.gameConstants = root["gameConstants"].(GameConstants)
@@ -131,7 +136,7 @@ func (game *Game) getSpellById(typeId int) Spell {
 		}
 	}
 	var retSpell Spell
-	return retSpell /*TODO*/ // WTF to do
+	return retSpell
 }
 
 func (game *Game) isUnitSpell(typeId int) bool {
@@ -149,7 +154,8 @@ func (game *Game) getBaseUnitByTypeId(typeId int) BaseUnit {
 			return baseUnit
 		}
 	}
-	return BaseUnit{} //TODO
+	var baseUnit BaseUnit
+	return baseUnit
 }
 
 func (game *Game) ChooseDeck(heroIds []int) {
@@ -211,7 +217,7 @@ func (game *Game) GetPathsFromPlayer(playerId int) []Path { //TODO friend paths
 		startCell := path.cells[0]
 		endCell := path.cells[len(path.cells)-1]
 		playerCell := game.GetPlayerPosition(playerId)
-		if startCell == playerCell || endCell == playerCell { //TODO use == again
+		if startCell == playerCell || endCell == playerCell {
 			paths = append(paths, path)
 		}
 	}
