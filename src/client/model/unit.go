@@ -16,4 +16,5 @@ type Unit struct {
 	isClone           bool
 	wasDamageUpgraded bool
 	wasRangeUpgraded  bool
+	wasPlayedThisTurn bool
 }

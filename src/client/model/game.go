@@ -1,6 +1,9 @@
 package model
 
-import . "../../common/network/data"
+import (
+	. "../../common/model"
+	. "../../common/network/data"
+)
 
 type Game struct {
 	gameConstants GameConstants
@@ -12,8 +15,8 @@ type Game struct {
 
 	currentTurn    int
 	playerUnits    [4][]Unit
-	castAreaSpells [4][]CastAreaSpell
-	castUnitSpells [4][]CastUnitSpell
+	castAreaSpells [4]CastAreaSpell
+	castUnitSpells [4]CastUnitSpell
 
 	gotRangeUpgrade         bool
 	gotDamageUpgrade        bool
@@ -24,6 +27,8 @@ type Game struct {
 	players []Player
 
 	myId, friendId, firstEnemy, secondEnemy int
+
+	sender func(message Message)
 }
 
 func (game *Game) HandleInitMessage(msg Message) {
@@ -64,11 +69,17 @@ func (game *Game) HandleTurnMessage(msg Message) {
 
 	game.mp.units = []Unit{}
 	for i := 0; i < 4; i++ {
-		game.playerUnits[i]=[]Unit{}
-		game.castUnitSpells[i]=[]CastUnitSpell{}
-		game.castAreaSpells[i]=[]CastAreaSpell{}
+		game.playerUnits[i] = []Unit{}
+		game.castUnitSpells[i] = CastUnitSpell{}
+		game.castAreaSpells[i] = CastAreaSpell{}
 	}
-
+	game.mp.unitsInCell = make([][][]Unit, 0)
+	for i := 0; i < game.GetMapWidth(); i++ {
+		game.mp.unitsInCell = append(game.mp.unitsInCell, make([][]Unit, 0))
+		for j := 0; j < game.GetMapHeight(); j++ {
+			game.mp.unitsInCell[i] = append(game.mp.unitsInCell[i], make([]Unit, 0))
+		}
+	}
 	units := root["units"].([]interface{}) // get baseUnit by typeId
 	for _, unit := range units {
 		typeId := unit.(map[string]interface{})["typeId"].(int)
@@ -79,16 +90,17 @@ func (game *Game) HandleTurnMessage(msg Message) {
 		//tmpUnit.rng = unit.(map[string]interface{})["range"].(int)
 		game.playerUnits[playerId] = append(game.playerUnits[playerId], tmpUnit)
 		game.mp.units = append(game.mp.units, tmpUnit)
-		/*TODO*/ // add units to cells or to game
+		game.mp.unitsInCell[tmpUnit.cell.row][tmpUnit.cell.col] =
+			append(game.mp.unitsInCell[tmpUnit.cell.row][tmpUnit.cell.col], tmpUnit) //TODO pointers or ID
 	}
 	castSpells := root["castSpells"].([]interface{})
 	for _, castSpell := range castSpells {
 		typeId := castSpell.(map[string]interface{})["typeId"].(int)
 		playerId := castSpell.(map[string]interface{})["casterId"].(int)
 		if game.isUnitSpell(typeId) {
-			game.castUnitSpells[playerId] = append(game.castUnitSpells[playerId], castSpell.(CastUnitSpell))
+			game.castUnitSpells[playerId] = castSpell.(CastUnitSpell)
 		} else {
-			game.castAreaSpells[playerId] = append(game.castAreaSpells[playerId], castSpell.(CastAreaSpell))
+			game.castAreaSpells[playerId] = castSpell.(CastAreaSpell)
 		}
 	}
 	game.players[game.myId].receivedSpell = root["receivedSpell"].(int)
@@ -118,7 +130,8 @@ func (game *Game) getSpellById(typeId int) Spell {
 			return spell
 		}
 	}
-	return AreaSpell{} /*TODO*/ // WTF to do
+	var retSpell Spell
+	return retSpell /*TODO*/ // WTF to do
 }
 
 func (game *Game) isUnitSpell(typeId int) bool {
@@ -140,17 +153,40 @@ func (game *Game) getBaseUnitByTypeId(typeId int) BaseUnit {
 }
 
 func (game *Game) ChooseDeck(heroIds []int) {
-	//TODO send message
+	i := make([]interface{}, 0)
+	for _, v := range heroIds {
+		i = append(i, v)
+	}
+	e := Event{Typ: "chooseDeck", Args: i} //TODO check server message format
+	game.sender(*NewMessage(EVENT, e))
 }
-func (game *Game) PlayUnit(typeId, pathId int) int {
-	panic("implement me")
+func (game *Game) PutUnit(typeId, pathId int) {
+	e := Event{Typ: "putUnit", Args: []interface{}{typeId, pathId}}
+	game.sender(*NewMessage(EVENT, e))
 }
+func (game *Game) getPathById(pathId int) Path {
+	for _, path := range game.mp.paths {
+		if pathId == path.pathId {
+			return path
+		}
+	}
+	var path Path
+	return path
+}
+
 func (game *Game) CastUnitSpell(unitId, pathId, index, spellId int) {
-	panic("implement me")
+	path := game.getPathById(pathId)
+	if len(path.cells) <= index {
+		return
+	}
+	cell := path.cells[index]
+	e := Event{Typ: "castSpell", Args: []interface{}{spellId, []int{cell.row, cell.col}, unitId, pathId}}
+	game.sender(*NewMessage(EVENT, e))
 }
 
 func (game *Game) CastAreaSpell(center Cell, spellId int) {
-	panic("implement me")
+	e := Event{Typ: "castSpell", Args: []interface{}{spellId, []int{center.row, center.col}, -1, -1}}
+	game.sender(*NewMessage(EVENT, e))
 }
 
 func (game *Game) getFriendId(playerId int) int {
@@ -173,27 +209,28 @@ func (game *Game) GetPathsFromPlayer(playerId int) []Path { //TODO friend paths
 	paths := make([]Path, 0)
 	for _, path := range game.mp.paths {
 		startCell := path.cells[0]
-		endCell := path.cells[len(path.cells)]
+		endCell := path.cells[len(path.cells)-1]
 		playerCell := game.GetPlayerPosition(playerId)
-		if startCell.Equals(playerCell) || endCell.Equals(playerCell) {
+		if startCell == playerCell || endCell == playerCell { //TODO use == again
 			paths = append(paths, path)
 		}
 	}
 	return paths
 }
 
-func (game *Game) GetPathsToFriend(playerId int) Path {
+func (game *Game) GetPathToFriend(playerId int) Path {
 	for _, path := range game.mp.paths {
 		startCell := path.cells[0]
-		endCell := path.cells[len(path.cells)]
+		endCell := path.cells[len(path.cells)-1]
 		myCell := game.GetPlayerPosition(playerId)
 		friendCell := game.GetPlayerPosition(game.getFriendId(playerId))
-		if (startCell.Equals(myCell) && endCell.Equals(friendCell)) ||
-			(startCell.Equals(friendCell) && endCell.Equals(myCell)) {
+		if (startCell == myCell && endCell == friendCell) ||
+			(startCell == friendCell && endCell == myCell) {
 			return path //TODO Is there such a path?
 		}
 	}
-	return Path{} //TODO nil?
+	var path Path
+	return path
 }
 
 func (game *Game) GetMapHeight() int {
@@ -204,11 +241,11 @@ func (game *Game) GetMapWidth() int {
 	return game.mp.width
 }
 
-func (game *Game) GetPathsCrossing(cell Cell) []Path {
+func (game *Game) GetPathsCrossingCell(cell Cell) []Path {
 	paths := make([]Path, 0)
 	for _, path := range game.mp.paths {
 		for _, cell1 := range path.cells {
-			if cell1.Equals(cell) {
+			if cell1 == cell {
 				paths = append(paths, path)
 				break
 			}
@@ -228,21 +265,40 @@ func (game *Game) GetPlayerUnits(playerId int) []Unit {
 }
 
 func (game *Game) GetCellUnits(cell Cell) []Unit {
-	return cell.units
+	if !game.isValid(cell) {
+		return []Unit{}
+	}
+	return game.mp.unitsInCell[cell.row][cell.col]
 }
 
 func (game *Game) GetShortestPathToCell(playerId int, cell Cell) Path {
-	/*	ans := -1
-		for _, path := range game.mp.paths {
-			startCell := path.cells[0]
-			endCell := path.cells[len(path.cells)]
-			playerCell := game.GetPlayerPosition(playerId)
-			if startCell.Equals(playerCell) {
-				paths = append(paths,path)
+	var ans Path
+	var minAns = -1
+	for _, path := range game.mp.paths {
+		startCell := path.cells[0]
+		endCell := path.cells[len(path.cells)-1]
+		playerCell := game.GetPlayerPosition(playerId)
+		if startCell == playerCell {
+			for i := range path.cells {
+				if path.cells[i] == cell && (minAns == -1 || i < minAns) {
+					minAns = i
+					ans = path
+					break
+				}
 			}
 		}
-	*/
-	panic("fill me up")
+		if endCell == playerCell {
+			for i := range path.cells {
+				lng := len(path.cells) - 1
+				if path.cells[lng-i] == cell && (minAns == -1 || i < minAns) {
+					minAns = i
+					ans = path
+					break
+				}
+			}
+		}
+	}
+	return ans
 }
 
 func (game *Game) GetMaxAP() int {
@@ -274,15 +330,12 @@ func (game *Game) GetTurnTimeout() int64 { //TODO pickTimeout?
 }
 
 func (game *Game) GetRemainingTime() int64 {
-	panic("implement me")
+	//TODO set start time
+	panic("HAHA")
 }
 
 func (game *Game) GetPlayerHP(playerId int) int {
 	return game.players[playerId].king.hp
-}
-
-func (game *Game) GetAreaSpellTargets(center Cell, spell Spell) []Unit {
-	panic("implement me")
 }
 
 func (game *Game) GetRemainingTurnsToUpgrade() int {
@@ -294,33 +347,133 @@ func (game *Game) GetRemainingTurnsToGetSpell() int {
 }
 
 func (game *Game) GetCastAreaSpell(playerId int) CastAreaSpell {
-	panic("implement me")
+	return game.castAreaSpells[playerId]
 }
 
 func (game *Game) GetCastUnitSpell(playerId int) CastUnitSpell {
-	panic("implement me")
-}
-
-func (game *Game) GetDeployedUnits(playerId int) []Unit {
-	panic("implement me")
-}
-
-func (game *Game) GetActiveSpellsOnCell(cell Cell) []CastAreaSpell { //TODO Delete? or active abilities on units
-	panic("implement me")
-}
-
-func (game *Game) GetUpgradeTokenNumber(playerId int) int {
-	panic("implement me")
-}
-
-func (game *Game) GetSpells() []Spell {
-	panic("implement me")
+	return game.castUnitSpells[playerId]
 }
 
 func (game *Game) GetReceivedSpell() Spell {
-	panic("implement me")
+	return game.getSpellById(game.players[game.myId].receivedSpell)
 }
 
 func (game *Game) GetFriendReceivedSpell() Spell {
-	panic("implement me")
+	return game.getSpellById(game.players[game.friendId].receivedSpell)
+}
+
+func (game *Game) GetFirstEnemy() int {
+	return game.firstEnemy
+}
+
+func (game *Game) GetSecondEnemy() int {
+	return game.secondEnemy
+}
+
+func (game *Game) GetPickTimeout() int64 {
+	return game.gameConstants.pickTimeout
+}
+
+func (game *Game) GetAreaSpellTargets(center Cell, spellId int) []Unit {
+	units := make([]Unit, 0)
+	spell := game.getSpellById(spellId).(AreaSpell)
+	for i := center.row - spell.rng; i <= center.row+spell.rng; i++ {
+		for j := center.col - spell.rng; j <= center.col+spell.rng; j++ {
+			units = append(units, game.GetCellUnits(Cell{i, j})...)
+		}
+	}
+	return units
+}
+
+func (game *Game) GetActivePoisonsOnUnit(unitId int) int {
+	return game.getUnitById(unitId).activePoisons
+}
+
+func (game *Game) GetRangeUpgradeNumber() int {
+	return game.availableRangeUpgrades
+}
+
+func (game *Game) GetDamageUpgradeNumber() int {
+	return game.availableDamageUpgrades
+}
+
+func (game *Game) GetSpellsList() []Spell {
+	return game.spells
+}
+
+func (game *Game) GetSpells() map[Spell]int {
+	spellMap := make(map[Spell]int, 0)
+	for _, spell := range game.spells {
+		var val, ok = spellMap[spell]
+		if !ok {
+			spellMap[spell] = 1
+		} else {
+			spellMap[spell] = val + 1
+		}
+	}
+	return spellMap
+}
+
+func (game *Game) UpgradeUnitRange(unitId int) {
+	e := Event{Typ: "rangeUpgrade", Args: []interface{}{unitId}}
+	game.sender(*NewMessage(EVENT, e))
+}
+
+func (game *Game) UpgradeUnitDamage(unitId int) {
+	e := Event{Typ: "damageUpgrade", Args: []interface{}{unitId}}
+	game.sender(*NewMessage(EVENT, e))
+}
+
+func (game *Game) GetPlayerCloneUnits(playerId int) []Unit {
+	res := make([]Unit, 0)
+	for _, unit := range game.mp.units {
+		if unit.isClone && unit.playerId == playerId {
+			res = append(res, unit)
+		}
+	}
+	return res
+}
+
+func (game *Game) GetPlayerHastedUnits(playerId int) []Unit {
+	res := make([]Unit, 0)
+	for _, unit := range game.mp.units {
+		if unit.isHasted && unit.playerId == playerId {
+			res = append(res, unit)
+		}
+	}
+	return res
+}
+
+func (game *Game) GetPlayerPoisonedUnits(playerId int) []Unit {
+	res := make([]Unit, 0)
+	for _, unit := range game.mp.units {
+		if unit.activePoisons > 0 && unit.playerId == playerId {
+			res = append(res, unit)
+		}
+	}
+	return res
+}
+
+func (game *Game) GetPlayerPlayedUnits(playerId int) []Unit {
+	res := make([]Unit, 0)
+	for _, unit := range game.mp.units {
+		if unit.wasPlayedThisTurn && unit.playerId == playerId {
+			res = append(res, unit)
+		}
+	}
+	return res
+}
+
+func (game *Game) isValid(cell Cell) bool {
+	return cell.row >= 0 && cell.row < game.GetMapWidth() && cell.col >= 0 && cell.col < game.GetMapHeight()
+}
+
+func (game *Game) getUnitById(unitId int) Unit {
+	for _, unit := range game.mp.units {
+		if unit.unitId == unitId {
+			return unit
+		}
+	}
+	var unit Unit
+	return unit
 }

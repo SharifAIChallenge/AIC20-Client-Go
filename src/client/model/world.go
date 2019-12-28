@@ -4,12 +4,14 @@ type World interface { //TODO make it have pointer arguments?
 	ChooseDeck(heroIds []int) //TODO list of heroNames(enum) or list of ints
 	GetMyId() int
 	GetFriendId() int
+	GetFirstEnemy() int
+	GetSecondEnemy() int
 	GetPlayerPosition(playerId int) Cell
 	GetPathsFromPlayer(playerId int) []Path
-	GetPathsToFriend(playerId int) Path
+	GetPathToFriend(playerId int) Path
 	GetMapHeight() int
 	GetMapWidth() int
-	GetPathsCrossing(cell Cell) []Path
+	GetPathsCrossingCell(cell Cell) []Path
 	GetPlayerUnits(playerId int) []Unit
 	GetCellUnits(cell Cell) []Unit
 	GetShortestPathToCell(playerId int, cell Cell) Path
@@ -17,23 +19,31 @@ type World interface { //TODO make it have pointer arguments?
 	GetRemainingAP(playerId int) int
 	GetHand() []int
 	GetDeck() []int
-	PlayUnit(typeId, pathId int) int
+	PutUnit(typeId, pathId int)
 	GetCurrentTurn() int
 	GetMaxTurns() int
+	GetPickTimeout() int64
 	GetTurnTimeout() int64
 	GetRemainingTime() int64
 	GetPlayerHP(playerId int) int
-	CastUnitSpell(unitId, pathId, index, spellId int) //Overload :( for spell?
-	CastAreaSpell(center Cell, spellId int)           //Overload
-	GetAreaSpellTargets(center Cell, spell Spell) []Unit
+	CastUnitSpell(unitId, pathId, index, spellId int)    //TODO Overload :( for spell?
+	CastAreaSpell(center Cell, spellId int)              //TODO Overload
+	GetAreaSpellTargets(center Cell, spellId int) []Unit //TODO overload
 	GetRemainingTurnsToUpgrade() int
 	GetRemainingTurnsToGetSpell() int
 	GetCastAreaSpell(playerId int) CastAreaSpell
 	GetCastUnitSpell(playerId int) CastUnitSpell
-	GetDeployedUnits(playerId int) []Unit
-	GetActiveSpellsOnCell(cell Cell) []CastAreaSpell
-	GetUpgradeTokenNumber(playerId int) int
-	GetSpells() []Spell
+	GetActivePoisonsOnUnit(unitId int) int
+	GetRangeUpgradeNumber() int
+	GetDamageUpgradeNumber() int
+	GetSpellsList() []Spell
+	GetSpells() map[Spell]int
 	GetReceivedSpell() Spell
 	GetFriendReceivedSpell() Spell
+	UpgradeUnitRange(unitId int)
+	UpgradeUnitDamage(unitId int)
+	GetPlayerCloneUnits(playerId int) []Unit
+	GetPlayerHastedUnits(playerId int) []Unit
+	GetPlayerPoisonedUnits(playerId int) []Unit
+	GetPlayerPlayedUnits(playerId int) []Unit
 }
