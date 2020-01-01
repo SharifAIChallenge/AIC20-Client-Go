@@ -1,14 +1,14 @@
 package model
 
 type UnitSpell struct {
-	typ        string `json:"type"`
-	typeId     int
-	priority   int
-	turnEffect int
+	Type       string `json:"type"`
+	TypeId     int    `json:"typeId"`
+	Priority   int    `json:"priority"`
+	TurnEffect int    `json:"turnEffect"`
 }
 
 func (unitSpell UnitSpell) GetTypeId() int {
-	return unitSpell.typeId
+	return unitSpell.TypeId
 }
 
 func (unitSpell UnitSpell) IsAreaSpell() bool {
@@ -16,9 +16,9 @@ func (unitSpell UnitSpell) IsAreaSpell() bool {
 }
 
 func (unitSpell UnitSpell) GetType() string {
-	return unitSpell.typ
+	return unitSpell.Type
 }
 
 func (unitSpell UnitSpell) GetPriority() int {
-	return unitSpell.priority
+	return unitSpell.Priority
 }

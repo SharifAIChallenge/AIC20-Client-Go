@@ -1,12 +1,12 @@
 package model
 
 type BaseUnit struct {
-	typeId     int
-	maxHp      int
-	baseAttack int
-	baseRange  int
-	ap         int
-	target     string
-	isFlying   bool
-	isMultiple bool
+	TypeId     int    `json:"typeId"`
+	MaxHp      int    `json:"maxHp"`
+	BaseAttack int    `json:"baseAttack"`
+	BaseRange  int    `json:"baseRange"`
+	Ap         int    `json:"ap"`
+	Target     string `json:"target"`
+	IsFlying   bool   `json:"isFlying"`
+	IsMultiple bool   `json:"isMultiple"`
 }

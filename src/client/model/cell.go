@@ -1,5 +1,6 @@
 package model
 
 type Cell struct {
-	row, col int
+	Row int `json:"row"`
+	Col int `json:"col"`
 }

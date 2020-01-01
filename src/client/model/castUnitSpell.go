@@ -1,41 +1,41 @@
 package model
 
 type CastUnitSpell struct {
-	typeId          int
-	id              int
-	casterId        int
-	unitId          int
-	pathId          int
-	target          Cell `json:"cell"`
-	affectedUnits   []int
-	remainingTurns  int //TODO remvoe this for unit spells?
-	wasCastThisTurn bool
+	TypeId         int   `json:"typeId"`
+	Id             int   `json:"id"`
+	CasterId       int   `json:"casterId"`
+	UnitId         int   `json:"unitId"`
+	PathId         int   `json:"pathId"`
+	Target         Cell  `json:"cell"`
+	AffectedUnits  []int `json:"affectedUnits"`
+	RemainingTurns int   `json:"remainingTurns"`
+	CastThisTurn   bool  `json:"wasCastThisTurn"`
 }
 
 func (c CastUnitSpell) GetId() int {
-	return c.id
+	return c.Id
 }
 
 func (c CastUnitSpell) GetTypeId() int {
-	return c.typeId
+	return c.TypeId
 }
 
 func (c CastUnitSpell) GetCasterId() int {
-	return c.casterId
+	return c.CasterId
 }
 
 func (c CastUnitSpell) GetCell() Cell {
-	return c.GetCell()
+	return c.Target
 }
 
 func (c CastUnitSpell) GetRemainingTurns() int {
-	return c.remainingTurns
+	return c.RemainingTurns
 }
 
 func (c CastUnitSpell) GetAffectedUnits() []int {
-	return c.affectedUnits
+	return c.AffectedUnits
 }
 
 func (c CastUnitSpell) WasCastThisTurn() bool {
-	return c.wasCastThisTurn
+	return c.CastThisTurn
 }

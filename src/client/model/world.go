@@ -45,6 +45,9 @@ type World interface { //TODO make it have pointer arguments?
 	GetPlayerDuplicateUnits(playerId int) []Unit
 	GetPlayerHastedUnits(playerId int) []Unit
 	GetPlayerPlayedUnits(playerId int) []Unit
-	GetUnitTarget(unitId int) Unit
+	GetUnitTarget(unitId int) Unit //TODO overload
 	GetUnitTargetCell(unitId int) Cell
+	GetKingTarget(playerId int) Unit
+	GetKingTargetCell(playerId int) Cell
+	GetKingUnitIsAttacking(unitId int) int
 }

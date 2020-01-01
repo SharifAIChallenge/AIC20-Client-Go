@@ -1,39 +1,39 @@
 package model
 
 type CastAreaSpell struct {
-	typeId          int
-	id              int
-	casterId        int
-	cell            Cell
-	affectedUnits   []int //TODO unit instead of unitId
-	remainingTurns  int
-	wasCastThisTurn bool
+	TypeId         int   `json:"typeId"`
+	Id             int   `json:"id"`
+	CasterId       int   `json:"casterId"`
+	Cell           Cell  `json:"cell"`
+	AffectedUnits  []int `json:"affectedUnits"`
+	RemainingTurns int   `json:"remainingTurns"`
+	CastThisTurn   bool  `json:"wasCastThisTurn"`
 }
 
 func (c CastAreaSpell) GetId() int {
-	return c.id
+	return c.Id
 }
 
 func (c CastAreaSpell) GetTypeId() int {
-	return c.typeId
+	return c.TypeId
 }
 
 func (c CastAreaSpell) GetCasterId() int {
-	return c.casterId
+	return c.CasterId
 }
 
 func (c CastAreaSpell) GetCell() Cell {
-	return c.GetCell()
+	return c.Cell
 }
 
 func (c CastAreaSpell) GetRemainingTurns() int {
-	return c.remainingTurns
+	return c.RemainingTurns
 }
 
 func (c CastAreaSpell) GetAffectedUnits() []int {
-	return c.affectedUnits
+	return c.AffectedUnits
 }
 
 func (c CastAreaSpell) WasCastThisTurn() bool {
-	return c.wasCastThisTurn
+	return c.CastThisTurn
 }

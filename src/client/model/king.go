@@ -1,10 +1,11 @@
 package model
 
 type King struct {
-	playerId int
-	center   Cell
-	hp       int
-	attack   int
-	rng      int  `json:"range"`
-	isAlive  bool //TODO make it a method?
+	PlayerId int  `json:"playerId"`
+	Center   Cell `json:"center"`
+	Hp       int  `json:"hp"`
+	Attack   int  `json:"attack"`
+	Range    int  `json:"range"`
+	IsAlive  bool `json:"isAlive"`
+	Target   int  `json:"Target"`
 }

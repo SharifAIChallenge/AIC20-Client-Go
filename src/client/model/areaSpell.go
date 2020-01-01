@@ -1,17 +1,17 @@
 package model
 
 type AreaSpell struct {
-	typ      string `json:"type"`
-	typeId   int
-	priority int
-	duration int
-	rng      int `json:"range"`
-	power    int
-	target   string
+	Type     string `json:"type"`
+	TypeId   int    `json:"typeId"`
+	Priority int    `json:"priority"`
+	Duration int    `json:"duration"`
+	Range    int    `json:"range"`
+	Power    int    `json:"Power"`
+	Target   string `json:"target"`
 }
 
 func (areaSpell AreaSpell) GetTypeId() int {
-	return areaSpell.typeId
+	return areaSpell.TypeId
 }
 
 func (areaSpell AreaSpell) IsAreaSpell() bool {
@@ -19,9 +19,9 @@ func (areaSpell AreaSpell) IsAreaSpell() bool {
 }
 
 func (areaSpell AreaSpell) GetType() string {
-	return areaSpell.typ
+	return areaSpell.Type
 }
 
 func (areaSpell AreaSpell) GetPriority() int {
-	return areaSpell.priority
+	return areaSpell.Priority
 }
