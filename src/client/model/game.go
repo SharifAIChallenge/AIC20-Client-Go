@@ -13,11 +13,11 @@ type Game struct {
 	areaSpells    []AreaSpell
 	unitSpells    []UnitSpell
 
-	currentTurn   int
-	playerUnits   [4][]Unit
-	castAreaSpell [4]CastAreaSpell
-	castUnitSpell [4]CastUnitSpell
-
+	currentTurn             int
+	playerUnits             [4][]Unit
+	castAreaSpell           [4]CastAreaSpell
+	castUnitSpell           [4]CastUnitSpell
+	castSpells              []CastSpell
 	gotRangeUpgrade         bool
 	gotDamageUpgrade        bool
 	availableRangeUpgrades  int
@@ -74,7 +74,7 @@ func (game *Game) HandleTurnMessage(msg Message) {
 		game.players[playerId].king.hp = king.(map[string]interface{})["hp"].(int)
 	}
 
-	game.mp.units = []Unit{}
+	game.mp.units = make([]Unit, 0)
 	for i := 0; i < 4; i++ {
 		game.playerUnits[i] = []Unit{}
 		game.castUnitSpell[i] = CastUnitSpell{}
@@ -104,24 +104,33 @@ func (game *Game) HandleTurnMessage(msg Message) {
 		game.castUnitSpell[i] = CastUnitSpell{} //TODO nil?
 		game.castAreaSpell[i] = CastAreaSpell{}
 	}
+	game.castSpells = make([]CastSpell, 0)
+
 	for _, castSpell := range castSpells {
 		typeId := castSpell.(map[string]interface{})["typeId"].(int)
 		playerId := castSpell.(map[string]interface{})["casterId"].(int)
+		thisTurn := castSpell.(map[string]interface{})["wasCastThisTurn"].(bool)
 		if game.isUnitSpell(typeId) {
-			game.castUnitSpell[playerId] = castSpell.(CastUnitSpell)
+			if thisTurn {
+				game.castUnitSpell[playerId] = castSpell.(CastUnitSpell)
+			}
+			castSpells = append(castSpells, castSpell.(CastUnitSpell))
 		} else {
-			game.castAreaSpell[playerId] = castSpell.(CastAreaSpell)
+			if thisTurn {
+				game.castAreaSpell[playerId] = castSpell.(CastAreaSpell)
+			}
+			castSpells = append(castSpells, castSpell.(CastAreaSpell))
 		}
 	}
 	game.players[game.myId].receivedSpell = root["receivedSpell"].(int)
 	game.players[game.friendId].receivedSpell = root["friendReceivedSpell"].(int)
-	var tmpSpells []Spell
+	var tmpSpells = make([]Spell, 0)
 	mySpells := root["mySpells"].([]int)
 	for _, spellId := range mySpells {
 		tmpSpells = append(tmpSpells, game.getSpellById(spellId))
 	}
 	game.players[game.myId].spells = tmpSpells
-	tmpSpells = []Spell{}
+	tmpSpells = make([]Spell, 0)
 	friendSpells := root["friendSpells"].([]int)
 	for _, spellId := range friendSpells {
 		tmpSpells = append(tmpSpells, game.getSpellById(spellId))
@@ -354,12 +363,20 @@ func (game Game) GetRemainingAP(playerId int) int {
 	return game.players[playerId].ap
 }
 
-func (game Game) GetHand() []int {
-	return game.players[game.myId].hand
+func (game Game) GetHand() []BaseUnit {
+	hand := make([]BaseUnit, 0)
+	for _, id := range game.players[game.myId].hand {
+		hand = append(hand, game.getBaseUnitByTypeId(id))
+	}
+	return hand
 }
 
-func (game Game) GetDeck() []int {
-	return game.players[game.myId].deck
+func (game Game) GetDeck() []BaseUnit {
+	deck := make([]BaseUnit, 0)
+	for _, id := range game.players[game.myId].deck {
+		deck = append(deck, game.getBaseUnitByTypeId(id))
+	}
+	return deck
 }
 
 func (game Game) GetCurrentTurn() int {
@@ -433,10 +450,6 @@ func (game Game) GetAreaSpellTargets(center Cell, spellId int) []Unit {
 	return units
 }
 
-func (game Game) GetActivePoisonsOnUnit(unitId int) int {
-	return game.getUnitById(unitId).activePoisons
-}
-
 func (game Game) GetRangeUpgradeNumber() int {
 	return game.availableRangeUpgrades
 }
@@ -462,10 +475,10 @@ func (game Game) GetSpells() map[Spell]int {
 	return spellMap
 }
 
-func (game Game) GetPlayerCloneUnits(playerId int) []Unit {
+func (game Game) GetPlayerDuplicateUnits(playerId int) []Unit {
 	res := make([]Unit, 0)
 	for _, unit := range game.mp.units {
-		if unit.isClone && unit.playerId == playerId {
+		if unit.isDuplicate && unit.playerId == playerId {
 			res = append(res, unit)
 		}
 	}
@@ -476,16 +489,6 @@ func (game Game) GetPlayerHastedUnits(playerId int) []Unit {
 	res := make([]Unit, 0)
 	for _, unit := range game.mp.units {
 		if unit.isHasted && unit.playerId == playerId {
-			res = append(res, unit)
-		}
-	}
-	return res
-}
-
-func (game Game) GetPlayerPoisonedUnits(playerId int) []Unit {
-	res := make([]Unit, 0)
-	for _, unit := range game.mp.units {
-		if unit.activePoisons > 0 && unit.playerId == playerId {
 			res = append(res, unit)
 		}
 	}
@@ -514,4 +517,27 @@ func (game Game) getUnitById(unitId int) Unit {
 	}
 	var unit Unit
 	return unit
+}
+func (game Game) getCastSpellById(id int) CastSpell {
+	for _, c := range game.castSpells {
+		if c.GetId() == id {
+			return c
+		}
+	}
+	return nil
+}
+func (game Game) GetCastSpellsOnUnit(unitId int) []CastSpell {
+	castSpells := make([]CastSpell, 0)
+	for _, c := range game.getUnitById(unitId).affectedSpells {
+		castSpells = append(castSpells, game.getCastSpellById(c))
+	}
+	return castSpells
+}
+
+func (game Game) GetUnitTarget(unitId int) Unit {
+	return game.getUnitById(game.getUnitById(unitId).target)
+}
+
+func (game Game) GetUnitTargetCell(unitId int) Cell {
+	return game.getUnitById(game.getUnitById(unitId).target).cell
 }

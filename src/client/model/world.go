@@ -17,8 +17,8 @@ type World interface { //TODO make it have pointer arguments?
 	GetShortestPathToCell(playerId int, cell Cell) Path
 	GetMaxAP() int
 	GetRemainingAP(playerId int) int
-	GetHand() []int
-	GetDeck() []int
+	GetHand() []BaseUnit
+	GetDeck() []BaseUnit
 	PutUnit(typeId, pathId int)
 	GetCurrentTurn() int
 	GetMaxTurns() int
@@ -33,7 +33,7 @@ type World interface { //TODO make it have pointer arguments?
 	GetRemainingTurnsToGetSpell() int
 	GetCastAreaSpell(playerId int) CastAreaSpell
 	GetCastUnitSpell(playerId int) CastUnitSpell
-	GetActivePoisonsOnUnit(unitId int) int
+	GetCastSpellsOnUnit(unitId int) []CastSpell
 	GetRangeUpgradeNumber() int
 	GetDamageUpgradeNumber() int
 	GetSpellsList() []Spell
@@ -42,8 +42,9 @@ type World interface { //TODO make it have pointer arguments?
 	GetFriendReceivedSpell() Spell
 	UpgradeUnitRange(unitId int)
 	UpgradeUnitDamage(unitId int)
-	GetPlayerCloneUnits(playerId int) []Unit
+	GetPlayerDuplicateUnits(playerId int) []Unit
 	GetPlayerHastedUnits(playerId int) []Unit
-	GetPlayerPoisonedUnits(playerId int) []Unit
 	GetPlayerPlayedUnits(playerId int) []Unit
+	GetUnitTarget(unitId int) Unit
+	GetUnitTargetCell(unitId int) Cell
 }

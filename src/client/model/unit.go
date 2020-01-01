@@ -11,11 +11,11 @@ type Unit struct {
 	rangeLevel        int
 	attack            int
 	rng               int `json:"range"`
-	activePoisons     int
 	isHasted          bool
-	isClone           bool
+	isDuplicate       bool
 	wasDamageUpgraded bool
 	wasRangeUpgraded  bool
 	wasPlayedThisTurn bool
 	target            int
+	affectedSpells    []int
 }
