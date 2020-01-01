@@ -2,6 +2,7 @@ package model
 
 import (
 	. "../../common/network/data"
+	"time"
 )
 
 type Game struct {
@@ -22,6 +23,8 @@ type Game struct {
 	availableRangeUpgrades  int
 	availableDamageUpgrades int
 	remainingAP             int
+
+	startTime int64
 
 	players []Player
 
@@ -57,6 +60,7 @@ func (game *Game) HandleInitMessage(msg Message) {
 			game.unitSpells = append(game.unitSpells, spell.(UnitSpell))
 		}
 	}
+	game.startTime = time.Now().UnixNano()
 }
 func (game *Game) HandleTurnMessage(msg Message) {
 	root := msg.Args.(map[string]interface{})
@@ -128,6 +132,7 @@ func (game *Game) HandleTurnMessage(msg Message) {
 	game.availableRangeUpgrades = root["availableRangeUpgrades"].(int)
 	game.availableDamageUpgrades = root["availableDamageUpgrades"].(int)
 	game.remainingAP = root["remainingAP"].(int)
+	game.startTime = time.Now().UnixNano()
 }
 
 func (game Game) getSpellById(typeId int) Spell {
@@ -168,7 +173,7 @@ func (game Game) ChooseDeck(heroIds []int) {
 	game.sender(msg)
 }
 func (game Game) PutUnit(typeId, pathId int) {
-	msg := Message{Name: "putUnit", Args: []interface{}{typeId, pathId}}
+	msg := Message{Name: "putUnit", Args: []int{typeId, pathId}, Turn: game.currentTurn} //TODO named args?
 	game.sender(msg)
 }
 func (game Game) getPathById(pathId int) Path {
@@ -281,10 +286,12 @@ func (game Game) GetCellUnits(cell Cell) []Unit {
 func (game Game) GetShortestPathToCell(playerId int, cell Cell) Path {
 	var ans Path
 	var minAns = -1
+	friendPathLen := len(game.GetPathToFriend(playerId).cells)
 	for _, path := range game.mp.paths {
 		startCell := path.cells[0]
 		endCell := path.cells[len(path.cells)-1]
 		playerCell := game.GetPlayerPosition(playerId)
+		friendCell := game.GetPlayerPosition(game.getFriendId(playerId))
 		if startCell == playerCell {
 			for i := range path.cells {
 				if path.cells[i] == cell && (minAns == -1 || i < minAns) {
@@ -295,10 +302,29 @@ func (game Game) GetShortestPathToCell(playerId int, cell Cell) Path {
 			}
 		}
 		if endCell == playerCell {
+			lng := len(path.cells) - 1
 			for i := range path.cells {
-				lng := len(path.cells) - 1
 				if path.cells[lng-i] == cell && (minAns == -1 || i < minAns) {
 					minAns = i
+					ans = path
+					break
+				}
+			}
+		}
+		if startCell == friendCell {
+			for i := range path.cells {
+				if path.cells[i] == cell && (minAns == -1 || i+friendPathLen < minAns) {
+					minAns = i + friendPathLen
+					ans = path
+					break
+				}
+			}
+		}
+		if endCell == friendCell {
+			lng := len(path.cells) - 1
+			for i := range path.cells {
+				if path.cells[lng-i] == cell && (minAns == -1 || i+friendPathLen < minAns) {
+					minAns = i + friendPathLen
 					ans = path
 					break
 				}
@@ -337,8 +363,11 @@ func (game Game) GetTurnTimeout() int64 { //TODO pickTimeout?
 }
 
 func (game Game) GetRemainingTime() int64 {
-	//TODO set start time
-	panic("HAHA")
+	if game.currentTurn == 0 {
+		return game.GetPickTimeout() + (time.Now().UnixNano()-game.startTime)/1e6
+	} else {
+		return game.GetTurnTimeout() + (time.Now().UnixNano()-game.startTime)/1e6
+	}
 }
 
 func (game Game) GetPlayerHP(playerId int) int {
