@@ -11,7 +11,7 @@ var ArgNames = [...]string{"AICHostIP", "AICHostPort", "AICToken", "AICRetryDela
 var ArgDefaults = [...]string{"localhost", "7099", "00000000000000000000000000000000", "1000"}
 
 func main() {
-
+	run(getArgs())
 }
 func run(args []string) {
 	//TODO verbose

@@ -47,13 +47,13 @@ func (controller Controller) handleMessage(msg Message) {
 func (controller Controller) handleInitMessage(msg Message) {
 	//TODO make new Game
 	controller.game.HandleInitMessage(msg)
-	controller.pick()
+	controller.pick(controller.game.GetCurrentTurn())
 }
 
 func (controller Controller) handleTurnMessage(msg Message) {
 	//TODO make new game
 	controller.game.HandleTurnMessage(msg)
-	controller.turn()
+	controller.turn(controller.game.GetCurrentTurn())
 }
 
 func (controller Controller) handleShutdownMessage(msg Message) {
@@ -61,16 +61,16 @@ func (controller Controller) handleShutdownMessage(msg Message) {
 	os.Exit(0)
 }
 
-func (controller Controller) pick() {
+func (controller Controller) pick(turnNumber int) {
 	go func() {
 		pick(controller.game)
-		controller.sender(*NewMessage("pick-end", []interface{}{controller.game.GetCurrentTurn()})) //TODO message format
+		controller.sender(Message{Name: "pick-end", Args: []interface{}{turnNumber}}) //TODO message format
 	}()
 }
 
-func (controller Controller) turn() {
+func (controller Controller) turn(turnNumber int) {
 	go func() {
 		turn(controller.game)
-		controller.sender(*NewMessage("turn-end", []interface{}{controller.game.GetCurrentTurn()})) //TODO message format
+		controller.sender(Message{Name: "turn-end", Args: []interface{}{turnNumber}}) //TODO message format
 	}()
 }

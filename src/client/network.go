@@ -22,7 +22,7 @@ func (network Network) connect() {
 	network.isConnected = false
 	var client JsonSocket
 	client = *NewJsonSocket(network.host, network.port)
-	client.Send(*NewMessage("token", network.token))
+	client.Send(Message{Name: "token", Args: []interface{}{network.token}})
 	init := client.Get().(Message)
 	if init.Name != "init" {
 		client.Close()

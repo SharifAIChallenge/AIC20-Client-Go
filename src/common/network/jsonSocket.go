@@ -6,6 +6,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"net"
+	"strconv"
 )
 
 const tag = "JsonSocket"
@@ -16,7 +17,7 @@ type JsonSocket struct {
 }
 
 func NewJsonSocket(host string, port int) *JsonSocket {
-	socket, _ := net.Dial("tcp", host+":"+string(port))
+	socket, _ := net.Dial("tcp", host+":"+strconv.Itoa(port)) //TODO for error != nil?
 	return &JsonSocket{socket: socket}
 }
 

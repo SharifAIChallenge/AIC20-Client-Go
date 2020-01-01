@@ -1,7 +1,6 @@
 package model
 
 import (
-	. "../../common/model"
 	. "../../common/network/data"
 )
 
@@ -36,7 +35,7 @@ func NewGame(sender func(message Message)) *Game {
 }
 
 func (game *Game) HandleInitMessage(msg Message) {
-	root := msg.Args[0]
+	root := msg.Args.(map[string]interface{}) //TODO make it work?
 	game.gameConstants = root["gameConstants"].(GameConstants)
 	game.mp = root["map"].(Map)
 	for _, king := range game.mp.kings {
@@ -60,7 +59,7 @@ func (game *Game) HandleInitMessage(msg Message) {
 	}
 }
 func (game *Game) HandleTurnMessage(msg Message) {
-	root := msg.Args[0]
+	root := msg.Args.(map[string]interface{})
 	game.currentTurn = root["currentTurn"].(int)
 	game.players[game.myId].deck = root["deck"].([]int)
 	game.players[game.myId].hand = root["hand"].([]int)
@@ -165,12 +164,12 @@ func (game Game) ChooseDeck(heroIds []int) {
 	for _, v := range heroIds {
 		i = append(i, v)
 	}
-	e := Event{Typ: "chooseDeck", Args: i} //TODO check server message format
-	game.sender(*NewMessage(EVENT, e))
+	msg := Message{Name: "chooseDeck", Args: i} //TODO check server message format
+	game.sender(msg)
 }
 func (game Game) PutUnit(typeId, pathId int) {
-	e := Event{Typ: "putUnit", Args: []interface{}{typeId, pathId}}
-	game.sender(*NewMessage(EVENT, e))
+	msg := Message{Name: "putUnit", Args: []interface{}{typeId, pathId}}
+	game.sender(msg)
 }
 func (game Game) getPathById(pathId int) Path {
 	for _, path := range game.mp.paths {
@@ -188,13 +187,13 @@ func (game Game) CastUnitSpell(unitId, pathId, index, spellId int) {
 		return
 	}
 	cell := path.cells[index]
-	e := Event{Typ: "castSpell", Args: []interface{}{spellId, []int{cell.row, cell.col}, unitId, pathId}}
-	game.sender(*NewMessage(EVENT, e))
+	msg := Message{Name: "castSpell", Args: []interface{}{spellId, []int{cell.row, cell.col}, unitId, pathId}}
+	game.sender(msg)
 }
 
 func (game Game) CastAreaSpell(center Cell, spellId int) {
-	e := Event{Typ: "castSpell", Args: []interface{}{spellId, []int{center.row, center.col}, -1, -1}}
-	game.sender(*NewMessage(EVENT, e))
+	msg := Message{Name: "castSpell", Args: []interface{}{spellId, []int{center.row, center.col}, -1, -1}}
+	game.sender(msg)
 }
 
 func (game Game) getFriendId(playerId int) int {
@@ -423,13 +422,13 @@ func (game Game) GetSpells() map[Spell]int {
 }
 
 func (game Game) UpgradeUnitRange(unitId int) {
-	e := Event{Typ: "rangeUpgrade", Args: []interface{}{unitId}}
-	game.sender(*NewMessage(EVENT, e))
+	msg := Message{Name: "rangeUpgrade", Args: []interface{}{unitId}}
+	game.sender(msg)
 }
 
 func (game Game) UpgradeUnitDamage(unitId int) {
-	e := Event{Typ: "damageUpgrade", Args: []interface{}{unitId}}
-	game.sender(*NewMessage(EVENT, e))
+	msg := Message{Name: "damageUpgrade", Args: []interface{}{unitId}}
+	game.sender(msg)
 }
 
 func (game Game) GetPlayerCloneUnits(playerId int) []Unit {
