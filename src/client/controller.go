@@ -64,13 +64,13 @@ func (controller Controller) handleShutdownMessage(msg Message) {
 func (controller Controller) pick(turnNumber int) {
 	go func() {
 		pick(controller.game)
-		controller.sender(Message{Name: "pick-end", Args: []interface{}{turnNumber}}) //TODO message format
+		controller.sender(Message{Name: "endTurn", Turn: turnNumber})
 	}()
 }
 
 func (controller Controller) turn(turnNumber int) {
 	go func() {
 		turn(controller.game)
-		controller.sender(Message{Name: "turn-end", Args: []interface{}{turnNumber}}) //TODO message format
+		controller.sender(Message{Name: "endTurn", Turn: turnNumber})
 	}()
 }

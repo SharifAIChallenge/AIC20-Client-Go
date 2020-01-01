@@ -135,6 +135,45 @@ func (game *Game) HandleTurnMessage(msg Message) {
 	game.startTime = time.Now().UnixNano()
 }
 
+func (game Game) ChooseDeck(heroIds []int) {
+	i := make([]interface{}, 0)
+	for _, v := range heroIds {
+		i = append(i, v)
+	}
+	msg := Message{Name: "pick", Args: i} //TODO check server message format
+	game.sender(msg)
+}
+func (game Game) PutUnit(typeId, pathId int) {
+	msg := Message{Name: "putUnit", Args: []int{typeId, pathId}, Turn: game.currentTurn} //TODO named args?
+	game.sender(msg)
+}
+func (game Game) CastUnitSpell(unitId, pathId, index, spellId int) {
+	path := game.getPathById(pathId)
+	if len(path.cells) <= index {
+		return
+	}
+	cell := path.cells[index]
+	msg := Message{Name: "castSpell",
+		Args: []interface{}{spellId, []int{cell.row, cell.col}, unitId, pathId}, Turn: game.currentTurn}
+	game.sender(msg)
+}
+
+func (game Game) CastAreaSpell(center Cell, spellId int) {
+	msg := Message{Name: "castSpell",
+		Args: []interface{}{spellId, []int{center.row, center.col}, -1, -1}, Turn: game.currentTurn}
+	game.sender(msg)
+}
+
+func (game Game) UpgradeUnitRange(unitId int) {
+	msg := Message{Name: "rangeUpgrade", Args: []interface{}{unitId}, Turn: game.currentTurn}
+	game.sender(msg)
+}
+
+func (game Game) UpgradeUnitDamage(unitId int) {
+	msg := Message{Name: "damageUpgrade", Args: []interface{}{unitId}, Turn: game.currentTurn}
+	game.sender(msg)
+}
+
 func (game Game) getSpellById(typeId int) Spell {
 	for _, spell := range game.spells {
 		if spell.GetTypeId() == typeId {
@@ -164,18 +203,6 @@ func (game Game) getBaseUnitByTypeId(typeId int) BaseUnit {
 	return baseUnit
 }
 
-func (game Game) ChooseDeck(heroIds []int) {
-	i := make([]interface{}, 0)
-	for _, v := range heroIds {
-		i = append(i, v)
-	}
-	msg := Message{Name: "chooseDeck", Args: i} //TODO check server message format
-	game.sender(msg)
-}
-func (game Game) PutUnit(typeId, pathId int) {
-	msg := Message{Name: "putUnit", Args: []int{typeId, pathId}, Turn: game.currentTurn} //TODO named args?
-	game.sender(msg)
-}
 func (game Game) getPathById(pathId int) Path {
 	for _, path := range game.mp.paths {
 		if pathId == path.pathId {
@@ -184,21 +211,6 @@ func (game Game) getPathById(pathId int) Path {
 	}
 	var path Path
 	return path
-}
-
-func (game Game) CastUnitSpell(unitId, pathId, index, spellId int) {
-	path := game.getPathById(pathId)
-	if len(path.cells) <= index {
-		return
-	}
-	cell := path.cells[index]
-	msg := Message{Name: "castSpell", Args: []interface{}{spellId, []int{cell.row, cell.col}, unitId, pathId}}
-	game.sender(msg)
-}
-
-func (game Game) CastAreaSpell(center Cell, spellId int) {
-	msg := Message{Name: "castSpell", Args: []interface{}{spellId, []int{center.row, center.col}, -1, -1}}
-	game.sender(msg)
 }
 
 func (game Game) getFriendId(playerId int) int {
@@ -448,16 +460,6 @@ func (game Game) GetSpells() map[Spell]int {
 		}
 	}
 	return spellMap
-}
-
-func (game Game) UpgradeUnitRange(unitId int) {
-	msg := Message{Name: "rangeUpgrade", Args: []interface{}{unitId}}
-	game.sender(msg)
-}
-
-func (game Game) UpgradeUnitDamage(unitId int) {
-	msg := Message{Name: "damageUpgrade", Args: []interface{}{unitId}}
-	game.sender(msg)
 }
 
 func (game Game) GetPlayerCloneUnits(playerId int) []Unit {
