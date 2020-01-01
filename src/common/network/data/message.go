@@ -3,8 +3,8 @@ package data
 import "encoding/json"
 
 type Message struct {
-	Name string
-	Args []map[string]interface{}
+	Name string                   `json:"type"`
+	Args []map[string]interface{} `json:"args"`
 } //TODO remove? make Args just a []interface{}?
 
 func NewMessage(name string, args ...interface{}) *Message {

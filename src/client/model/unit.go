@@ -17,4 +17,5 @@ type Unit struct {
 	wasDamageUpgraded bool
 	wasRangeUpgraded  bool
 	wasPlayedThisTurn bool
+	target            int
 }

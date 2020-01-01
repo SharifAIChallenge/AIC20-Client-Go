@@ -1,11 +1,34 @@
 package main
 
 import (
-	"./model"
-	"fmt"
+	"os"
+	"strconv"
 )
 
+const GlobalVerboseFlag = false
+
+var ArgNames = [...]string{"AICHostIP", "AICHostPort", "AICToken", "AICRetryDelay"}
+var ArgDefaults = [...]string{"localhost", "7099", "00000000000000000000000000000000", "1000"}
+
 func main() {
-	var unit1 = model.Unit{}
-	fmt.Println(unit1)
+
+}
+func run(args []string) {
+	//TODO verbose
+	port, _ := strconv.Atoi(args[1])
+	retryDelay, _ := strconv.ParseInt(args[3], 10, 64)
+	controller := Controller{host: args[0], port: port, token: args[2], retryDelay: retryDelay}
+	controller.Start()
+}
+
+func getArgs() []string {
+	args := make([]string, len(ArgNames))
+	for i := range ArgNames {
+		var ok bool
+		args[i], ok = os.LookupEnv(ArgNames[i])
+		if !ok {
+			args[i] = ArgDefaults[i]
+		}
+	}
+	return args
 }

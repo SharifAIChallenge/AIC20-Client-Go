@@ -2,7 +2,7 @@ package model
 
 type AreaSpell struct {
 	typeId     int
-	turnEffect int
+	duration   int
 	rng        int `json:"range"`
 	power      int
 	isDamaging bool
