@@ -9,8 +9,8 @@ type World interface { //TODO make it have pointer arguments?
 	GetPlayerPosition(playerId int) Cell
 	GetPathsFromPlayer(playerId int) []Path
 	GetPathToFriend(playerId int) Path
-	GetMapHeight() int
-	GetMapWidth() int
+	GetMapRowNum() int
+	GetMapColNum() int
 	GetPathsCrossingCell(cell Cell) []Path
 	GetPlayerUnits(playerId int) []Unit
 	GetCellUnits(cell Cell) []Unit
@@ -50,4 +50,6 @@ type World interface { //TODO make it have pointer arguments?
 	GetKingTarget(playerId int) Unit
 	GetKingTargetCell(playerId int) Cell
 	GetKingUnitIsAttacking(unitId int) int
+	GetAllBaseUnits() []BaseUnit
+	GetAllSpells() []Spell
 }

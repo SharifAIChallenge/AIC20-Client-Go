@@ -9,5 +9,5 @@ type Player struct {
 	Spells        []Spell `json:"spells"`
 	ReceivedSpell int     `json:"receivedSpell"`
 	IsAlive       bool    `json:"isAlive"` //TODO remove? duplicate also in king
-	King          King    `json:"king"`
+	King          *King   `json:"king"`
 }

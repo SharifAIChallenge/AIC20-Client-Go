@@ -11,36 +11,41 @@ import (
 const Tag = "Controller"
 
 type Controller struct {
-	port       int
-	host       string
-	token      string
-	retryDelay int64
-	game       Game
-	network    Network
-	sender     func(message Message)
+	port           int
+	host           string
+	token          string
+	retryDelay     int64
+	game           *Game
+	network        *Network
+	sender         chan Message
+	messageHandler chan Message
 }
 
 func (controller Controller) Start() {
-	controller.network = Network{messageHandler: controller.handleMessage,
+	controller.messageHandler = make(chan Message)
+	controller.network = &Network{messageHandler: controller.messageHandler,
 		host: controller.host, port: controller.port, token: controller.token}
-	controller.sender = controller.network.send
-	controller.game = *NewGame(controller.sender)
+	controller.game = NewGame(controller.sender)
+	go controller.handleMessages()
 	for !controller.network.isConnected {
 		controller.network.connect()
 		time.Sleep(time.Duration(controller.retryDelay) * time.Millisecond)
 	}
 }
 
-func (controller Controller) handleMessage(msg Message) {
-	switch msg.Name {
-	case "init":
-		controller.handleInitMessage(msg)
-	case "turn":
-		controller.handleTurnMessage(msg)
-	case "shutdown":
-		controller.handleShutdownMessage(msg)
-	default:
-		log.W(Tag, "Undefined message received "+msg.Name)
+func (controller Controller) handleMessages() {
+	for {
+		msg := <-controller.messageHandler
+		switch msg.Name {
+		case "init":
+			controller.handleInitMessage(msg)
+		case "turn":
+			controller.handleTurnMessage(msg)
+		case "shutdown":
+			controller.handleShutdownMessage(msg)
+		default:
+			log.W(Tag, "Undefined message received "+msg.Name)
+		}
 	}
 }
 
@@ -64,13 +69,13 @@ func (controller Controller) handleShutdownMessage(msg Message) {
 func (controller Controller) pick(turnNumber int) {
 	go func() {
 		pick(controller.game)
-		controller.sender(Message{Name: "endTurn", Turn: turnNumber})
+		controller.sender <- Message{Name: "endTurn", Turn: turnNumber}
 	}()
 }
 
 func (controller Controller) turn(turnNumber int) {
 	go func() {
 		turn(controller.game)
-		controller.sender(Message{Name: "endTurn", Turn: turnNumber})
+		controller.sender <- Message{Name: "endTurn", Turn: turnNumber}
 	}()
 }

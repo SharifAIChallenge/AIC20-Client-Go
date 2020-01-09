@@ -5,6 +5,7 @@ import (
 	. "./data"
 	"bufio"
 	"encoding/json"
+	"fmt"
 	"net"
 	"strconv"
 )
@@ -30,19 +31,20 @@ func (jsonSocket JsonSocket) Send(msg Message) {
 	jsonSocket.socket.Write(append(js, byte('\000')))
 }
 
-func (jsonSocket JsonSocket) Get() interface{} {
-	js := make([]byte, 1000)
+func (jsonSocket JsonSocket) Get() Message {
+	js := make([]byte, 0)
 	if jsonSocket.reader == nil {
 		jsonSocket.reader = bufio.NewReader(jsonSocket.socket)
 	}
 	for {
-		char, err := jsonSocket.reader.ReadByte()
-		if err != nil || char == 0 { //TODO error
+		char, _ := jsonSocket.reader.ReadByte()
+		if char == 0 {
 			break
 		}
 		js = append(js, char)
 	}
-	var result interface{}
-	json.Unmarshal(js, &result)
+	fmt.Println(string(js))
+	var result Message
+	_ = json.Unmarshal(js, &result)
 	return result
 }
