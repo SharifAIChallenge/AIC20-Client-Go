@@ -5,7 +5,6 @@ import (
 	. "./data"
 	"bufio"
 	"encoding/json"
-	"fmt"
 	"net"
 	"strconv"
 )
@@ -43,7 +42,6 @@ func (jsonSocket JsonSocket) Get() Message {
 		}
 		js = append(js, char)
 	}
-	fmt.Println(string(js))
 	var result Message
 	_ = json.Unmarshal(js, &result)
 	return result

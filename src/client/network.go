@@ -3,6 +3,7 @@ package main
 import (
 	. "../common/network"
 	. "../common/network/data"
+	"fmt"
 )
 
 const tag = "Network"
@@ -30,7 +31,6 @@ func (network Network) connect() {
 	}
 	network.isConnected = true
 	network.socket = client
-	network.messagesToSend = make(chan Message)
 	network.messageHandler <- init
 	go network.startReceiving() //TODO is this okay?
 	go network.startSending()   //TODO should this be in another place?
@@ -49,8 +49,8 @@ func (network Network) doReceive() {
 
 func (network Network) startSending() {
 	for !network.terminateFlag {
-
 		msg := <-network.messagesToSend
+		fmt.Println(msg)
 		network.socket.Send(msg)
 	}
 }

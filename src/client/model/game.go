@@ -3,7 +3,6 @@ package model
 import (
 	. "../../common/network/data"
 	"encoding/json"
-	"fmt"
 	"time"
 )
 
@@ -67,7 +66,6 @@ func (game *Game) HandleTurnMessage(msg Message) {
 	for _, king := range kings {
 		var playerId int
 		mapToStruct(king.(map[string]interface{})["playerId"], &playerId)
-		fmt.Println("king:", playerId, game.players[playerId].King)
 		game.players[playerId].King.IsAlive = king.(map[string]interface{})["isAlive"].(bool)
 		mapToStruct(king.(map[string]interface{})["hp"], &game.players[playerId].King.Hp)
 		mapToStruct(king.(map[string]interface{})["target"], &game.players[playerId].King.Target)
@@ -171,7 +169,7 @@ func (game Game) ChooseDeck(heroIds []int) {
 	game.sender <- msg
 }
 func (game Game) PutUnit(typeId, pathId int) {
-	msg := Message{Name: "putUnit", Args: []int{typeId, pathId}, Turn: game.currentTurn} //TODO named args?
+	msg := Message{Name: "putUnit", Args: map[string]int{"typeId": typeId, "pathId": pathId}, Turn: game.currentTurn} //TODO named args?
 	game.sender <- msg
 }
 func (game Game) CastUnitSpell(unitId, pathId, index, spellId int) {
@@ -181,23 +179,23 @@ func (game Game) CastUnitSpell(unitId, pathId, index, spellId int) {
 	}
 	cell := path.Cells[index]
 	msg := Message{Name: "castSpell",
-		Args: []interface{}{spellId, []int{cell.Row, cell.Col}, unitId, pathId}, Turn: game.currentTurn}
+		Args: map[string]interface{}{"typeId": spellId, "cell": cell, "unitId": unitId, "pathId": pathId}, Turn: game.currentTurn}
 	game.sender <- msg
 }
 
 func (game Game) CastAreaSpell(center Cell, spellId int) {
 	msg := Message{Name: "castSpell",
-		Args: []interface{}{spellId, []int{center.Row, center.Col}, -1, -1}, Turn: game.currentTurn}
+		Args: map[string]interface{}{"typeId": spellId, "cell": center}, Turn: game.currentTurn}
 	game.sender <- msg
 }
 
 func (game Game) UpgradeUnitRange(unitId int) {
-	msg := Message{Name: "rangeUpgrade", Args: []interface{}{unitId}, Turn: game.currentTurn}
+	msg := Message{Name: "rangeUpgrade", Args: map[string]int{"unitId": unitId}, Turn: game.currentTurn}
 	game.sender <- msg
 }
 
 func (game Game) UpgradeUnitDamage(unitId int) {
-	msg := Message{Name: "damageUpgrade", Args: []interface{}{unitId}, Turn: game.currentTurn}
+	msg := Message{Name: "damageUpgrade", Args: map[string]int{"unitId": unitId}, Turn: game.currentTurn}
 	game.sender <- msg
 }
 

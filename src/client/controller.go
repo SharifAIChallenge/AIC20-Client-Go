@@ -24,7 +24,8 @@ type Controller struct {
 func (controller Controller) Start() {
 	controller.messageHandler = make(chan Message)
 	controller.network = &Network{messageHandler: controller.messageHandler,
-		host: controller.host, port: controller.port, token: controller.token}
+		host: controller.host, port: controller.port, token: controller.token, messagesToSend: make(chan Message)}
+	controller.sender = controller.network.messagesToSend
 	controller.game = NewGame(controller.sender)
 	go controller.handleMessages()
 	for !controller.network.isConnected {
