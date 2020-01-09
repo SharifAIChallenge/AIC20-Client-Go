@@ -165,7 +165,7 @@ func (game Game) ChooseDeck(heroIds []int) {
 	for _, v := range heroIds {
 		i = append(i, v)
 	}
-	msg := Message{Name: "pick", Args: i} //TODO check server message format
+	msg := Message{Name: "pick", Args: map[string]interface{}{"units": i}} //TODO check server message format
 	game.sender <- msg
 }
 func (game Game) PutUnit(typeId, pathId int) {
@@ -247,12 +247,15 @@ func (game Game) GetPlayerPosition(playerId int) Cell {
 
 func (game Game) GetPathsFromPlayer(playerId int) []Path { //TODO friend paths
 	paths := make([]Path, 0)
+	friendPath := game.GetPathToFriend(playerId)
 	for _, path := range game.Map.Paths {
-		startCell := path.Cells[0]
-		endCell := path.Cells[len(path.Cells)-1]
-		playerCell := game.GetPlayerPosition(playerId)
-		if startCell == playerCell || endCell == playerCell {
-			paths = append(paths, path)
+		if path.PathId != friendPath.PathId {
+			startCell := path.Cells[0]
+			endCell := path.Cells[len(path.Cells)-1]
+			playerCell := game.GetPlayerPosition(playerId)
+			if startCell == playerCell || endCell == playerCell {
+				paths = append(paths, path)
+			}
 		}
 	}
 	return paths
@@ -570,9 +573,17 @@ func (game Game) isUnitSpell(typeId int) bool {
 }
 
 func (game Game) GetAllBaseUnits() []BaseUnit {
-	return game.baseUnits
+	baseUnits := make([]BaseUnit, len(game.baseUnits))
+	copy(baseUnits, game.baseUnits)
+	return baseUnits
 }
 
 func (game Game) GetAllSpells() []Spell {
-	return game.spells
+	spells := make([]Spell, len(game.spells))
+	copy(spells, game.spells)
+	return spells
+}
+
+func (game Game) GetKingById(playerId int) King {
+	return *game.players[playerId].King
 }

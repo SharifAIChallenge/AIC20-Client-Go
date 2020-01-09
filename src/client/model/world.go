@@ -1,7 +1,7 @@
 package model
 
 type World interface { //TODO make it have pointer arguments?
-	ChooseDeck(heroIds []int) //TODO list of heroNames(enum) or list of ints
+	ChooseDeck(heroIds []int) //TODO list of baseUnits overload
 	GetMyId() int
 	GetFriendId() int
 	GetFirstEnemy() int
@@ -11,7 +11,7 @@ type World interface { //TODO make it have pointer arguments?
 	GetPathToFriend(playerId int) Path
 	GetMapRowNum() int
 	GetMapColNum() int
-	GetPathsCrossingCell(cell Cell) []Path
+	GetPathsCrossingCell(cell Cell) []Path //TODO Overload
 	GetPlayerUnits(playerId int) []Unit
 	GetCellUnits(cell Cell) []Unit
 	GetShortestPathToCell(playerId int, cell Cell) Path
@@ -52,4 +52,5 @@ type World interface { //TODO make it have pointer arguments?
 	GetKingUnitIsAttacking(unitId int) int
 	GetAllBaseUnits() []BaseUnit
 	GetAllSpells() []Spell
+	GetKingById(playerId int) King
 }

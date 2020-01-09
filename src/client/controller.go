@@ -70,13 +70,13 @@ func (controller Controller) handleShutdownMessage(msg Message) {
 func (controller Controller) pick(turnNumber int) {
 	go func() {
 		pick(controller.game)
-		controller.sender <- Message{Name: "endTurn", Turn: turnNumber}
+		controller.sender <- Message{Name: "endTurn", Args: map[string]interface{}{}, Turn: turnNumber}
 	}()
 }
 
 func (controller Controller) turn(turnNumber int) {
 	go func() {
 		turn(controller.game)
-		controller.sender <- Message{Name: "endTurn", Turn: turnNumber}
+		controller.sender <- Message{Name: "endTurn", Args: map[string]interface{}{}, Turn: turnNumber}
 	}()
 }

@@ -9,7 +9,7 @@ import (
 	"strconv"
 )
 
-const tag = "JsonSocket"
+const tag = "JsonSocket" //TODO remove
 
 type JsonSocket struct {
 	socket net.Conn
@@ -22,12 +22,12 @@ func NewJsonSocket(host string, port int) *JsonSocket {
 }
 
 func (jsonSocket JsonSocket) Close() {
-	jsonSocket.socket.Close()
+	_ = jsonSocket.socket.Close()
 }
 
 func (jsonSocket JsonSocket) Send(msg Message) {
 	js, _ := json.Marshal(msg) //TODO should we convert to utf8 or is it okay already?
-	jsonSocket.socket.Write(append(js, byte('\000')))
+	_, _ = jsonSocket.socket.Write(append(js, byte('\000')))
 }
 
 func (jsonSocket JsonSocket) Get() Message {

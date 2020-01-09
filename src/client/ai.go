@@ -15,7 +15,7 @@ func pick(world model.World) {
 func turn(world model.World) {
 	//fmt.Println(world.GetDeck())
 	if len(world.GetSpells()) > 0 {
-		world.CastAreaSpell(world.GetPathsFromPlayer(world.GetMyId())[0].Cells[0], world.GetSpellsList()[0].TypeId)
+		//	world.CastAreaSpell(world.GetPathsFromPlayer(world.GetMyId())[0].Cells[0], world.GetSpellsList()[0].TypeId)
 	}
 	//fmt.Println(world.GetCastAreaSpell(world.GetMyId()))
 	world.PutUnit(world.GetHand()[0].TypeId, world.GetPathsFromPlayer(world.GetMyId())[0].PathId)

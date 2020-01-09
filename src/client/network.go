@@ -3,7 +3,6 @@ package main
 import (
 	. "../common/network"
 	. "../common/network/data"
-	"fmt"
 )
 
 const tag = "Network"
@@ -50,13 +49,11 @@ func (network Network) doReceive() {
 func (network Network) startSending() {
 	for !network.terminateFlag {
 		msg := <-network.messagesToSend
-		fmt.Println(msg)
 		network.socket.Send(msg)
 	}
 }
 func (network Network) terminate() {
 	network.terminateFlag = true
-	network.socket.Close() //TODO errors?
 }
 
 //TODO handleIOE?
