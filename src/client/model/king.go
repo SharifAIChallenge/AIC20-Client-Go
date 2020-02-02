@@ -7,5 +7,5 @@ type King struct {
 	Attack   int   `json:"attack"`
 	Range    int   `json:"range"`
 	IsAlive  bool  `json:"isAlive"`
-	Target   int   `json:"Target"`
+	Target   *Unit   `json:"targetUnit"`  //TODO wtf is targetCell
 }

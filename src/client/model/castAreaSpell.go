@@ -7,5 +7,5 @@ type CastAreaSpell struct {
 	Cell           *Cell `json:"cell"`
 	AffectedUnits  []int `json:"affectedUnits"`
 	RemainingTurns int   `json:"remainingTurns"`
-	CastThisTurn   bool  `json:"wasCastThisTurn"`
+	CastThisTurn   bool  `json:"wasCastThisTurn"`//TODO remove
 }

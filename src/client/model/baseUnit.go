@@ -6,7 +6,7 @@ type BaseUnit struct {
 	BaseAttack int    `json:"baseAttack"`
 	BaseRange  int    `json:"baseRange"`
 	Ap         int    `json:"ap"`
-	Target     string `json:"target"`
+	TargetType string `json:"target"` //TODO json name?
 	IsFlying   bool   `json:"isFlying"`
 	IsMultiple bool   `json:"isMultiple"`
 }
