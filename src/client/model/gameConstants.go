@@ -9,4 +9,6 @@ type GameConstants struct {
 	TurnsToSpell          int   `json:"turnsToSpell"`
 	DamageUpgradeAddition int   `json:"damageUpgradeAddition"`
 	RangeUpgradeAddition  int   `json:"rangeUpgradeAddition"`
+	DeckSize              int   `json:"deckSize"`
+	HandSize              int   `json:"handSize"`
 }

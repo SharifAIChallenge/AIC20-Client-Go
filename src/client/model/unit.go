@@ -1,23 +1,20 @@
 package model
 
 type Unit struct {
-	UnitId         int         `json:"unitId"`
+	BaseUnit       *BaseUnit `json:"baseUnit"`
+	Cell           *Cell     `json:"cell"` //TODO only pointer?( or empty cell)
+	UnitId         int       `json:"unitId"`
+	Hp             int       `json:"hp"`
+	Path           *Path     `json:"path"`
+	Target         *Unit
+	TargetCell     *Cell `json:"targetCell"`
+	TargetIfKing   *King
 	PlayerId       int         `json:"playerId"`
-	Path           *Path       `json:"path"`
-	BaseUnit       *BaseUnit   `json:"baseUnit"`
-	Cell           *Cell       `json:"cell"` //TODO only pointer?( or empty cell)
-	Hp             int         `json:"hp"`
 	DamageLevel    int         `json:"damageLevel"`
 	RangeLevel     int         `json:"rangeLevel"`
-	Attack         int         `json:"attack"`
 	Range          int         `json:"range"`
-	IsHasted       bool        `json:"isHasted"`
+	Attack         int         `json:"attack"`
 	IsDuplicate    bool        `json:"isDuplicate"`
-	Target         *Unit       `json:"targetUnit"`
-	TargetIfKing   *King       `json:"targetIfKing"`
-	TargetCell     *Cell       `json:"targetCell"`
-	AffectedSpells []*CastSpell `json:"affectedCastSpells"` //TODO CastSpellsOnUnit
+	IsHasted       bool        `json:"isHasted"`
+	AffectedSpells []CastSpell `json:"affectedCastSpells"` //TODO CastSpellsOnUnit
 }
-
-
-//TODO GetCastSpellsOnUnit?

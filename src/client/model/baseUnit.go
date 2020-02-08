@@ -5,8 +5,8 @@ type BaseUnit struct {
 	MaxHp      int    `json:"maxHp"`
 	BaseAttack int    `json:"baseAttack"`
 	BaseRange  int    `json:"baseRange"`
-	Ap         int    `json:"ap"`
-	TargetType string `json:"target"` //TODO json name?
+	TargetType string `json:"target"` //TODO json name? //TODO Enum
 	IsFlying   bool   `json:"isFlying"`
 	IsMultiple bool   `json:"isMultiple"`
+	Ap         int    `json:"ap"`
 }

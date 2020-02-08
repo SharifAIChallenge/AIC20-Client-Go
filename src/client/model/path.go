@@ -1,6 +1,6 @@
 package model
 
 type Path struct {
-	Cells  []Cell `json:"cells"`
-	PathId int    `json:"id"`
+	Id    int    `json:"id"`
+	Cells []Cell `json:"cells"`
 }

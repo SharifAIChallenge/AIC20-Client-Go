@@ -2,10 +2,9 @@ package model
 
 type CastSpell interface { //TODO which methods to keep?
 	GetId() int
-	GetTypeId() int
+	GetSpell() *Spell
 	GetCasterId() int
-	GetCell() Cell
-	GetRemainingTurns() int
+	GetCell() *Cell
 	GetAffectedUnits() []int
 	WasCastThisTurn() bool
 }
