@@ -9,11 +9,11 @@ import (
 type Game struct {
 	gameConstants *GameConstants
 	Map           *Map
-	baseUnits     []BaseUnit
-	spells        []Spell
+	baseUnits     []*BaseUnit
+	spells        []*Spell
 
 	currentTurn             int
-	castSpells              []CastSpell
+	castSpells              []*CastSpell
 	gotRangeUpgrade         bool
 	gotDamageUpgrade        bool
 	availableRangeUpgrades  int
@@ -24,7 +24,7 @@ type Game struct {
 
 	startTime int64
 
-	players [4]Player
+	players [4]*Player
 
 	myId, friendId, firstEnemy, secondEnemy int
 	receivedSpell, friendReceivedSpell      *Spell
@@ -40,7 +40,7 @@ func (game *Game) HandleInitMessage(msg Message) {
 	mapToStruct(root["gameConstants"], &game.gameConstants)
 	mapToStruct(root["map"], &game.Map)
 	for _, king := range game.Map.Kings {
-		game.players[king.PlayerId] = Player{King: &king, PlayerId: king.PlayerId}
+		game.players[king.PlayerId] = &Player{King: king, PlayerId: king.PlayerId}
 	}
 	game.myId = game.Map.Kings[0].PlayerId
 	game.friendId = game.Map.Kings[1].PlayerId
@@ -52,7 +52,11 @@ func (game *Game) HandleInitMessage(msg Message) {
 	for _, spell := range spells {
 		var tmpSpell Spell
 		mapToStruct(spell, &tmpSpell)
-		game.spells = append(game.spells, tmpSpell)
+		game.spells = append(game.spells, &tmpSpell)
+	}
+	for i := 0; i < 4; i++ {
+		game.players[i].PathToFriend = game.getPathToFriend(i)
+		game.players[i].PathsFromPlayer = game.getPathsFromPlayer(i)
 	}
 	game.startTime = time.Now().UnixNano()
 }
@@ -76,19 +80,19 @@ func (game *Game) HandleTurnMessage(msg Message) {
 		}
 	}
 
-	game.Map.Units = make([]Unit, 0)
+	game.Map.Units = make([]*Unit, 0)
 	for i := 0; i < 4; i++ {
-		game.players[i].Units = make([]Unit, 0)
-		game.players[i].DuplicateUnits = make([]Unit, 0)
-		game.players[i].HastedUnits = make([]Unit, 0)
-		game.players[i].PlayedUnits = make([]Unit, 0)
-		game.players[i].DiedUnits = make([]Unit, 0)
+		game.players[i].Units = make([]*Unit, 0)
+		game.players[i].DuplicateUnits = make([]*Unit, 0)
+		game.players[i].HastedUnits = make([]*Unit, 0)
+		game.players[i].PlayedUnits = make([]*Unit, 0)
+		game.players[i].DiedUnits = make([]*Unit, 0)
 	}
-	game.Map.UnitsInCell = make([][][]Unit, 0)
+	game.Map.UnitsInCell = make([][][]*Unit, 0)
 	for i := 0; i < game.Map.RowNum; i++ {
-		game.Map.UnitsInCell = append(game.Map.UnitsInCell, make([][]Unit, 0))
+		game.Map.UnitsInCell = append(game.Map.UnitsInCell, make([][]*Unit, 0))
 		for j := 0; j < game.Map.ColNum; j++ {
-			game.Map.UnitsInCell[i] = append(game.Map.UnitsInCell[i], make([]Unit, 0))
+			game.Map.UnitsInCell[i] = append(game.Map.UnitsInCell[i], make([]*Unit, 0))
 		}
 	}
 	units := root["units"].([]interface{}) // get baseUnit by TypeId
@@ -125,25 +129,25 @@ func (game *Game) HandleTurnMessage(msg Message) {
 		} else if targetIsKing {
 			tmpUnit.TargetIfKing = targetIfKing
 		}
-		tmpUnit.AffectedSpells = make([]CastSpell, 0)
+		tmpUnit.AffectedSpells = make([]*CastSpell, 0)
 		for _, castSpellId := range affectedSpells {
 			affectedSpell := game.getCastSpellById(castSpellId)
-			tmpUnit.AffectedSpells = append(tmpUnit.AffectedSpells, *affectedSpell)
+			tmpUnit.AffectedSpells = append(tmpUnit.AffectedSpells, affectedSpell)
 		}
 
-		game.players[playerId].Units = append(game.players[playerId].Units, tmpUnit)
+		game.players[playerId].Units = append(game.players[playerId].Units, &tmpUnit)
 		if tmpUnit.IsDuplicate {
-			game.players[playerId].DuplicateUnits = append(game.players[playerId].DuplicateUnits, tmpUnit)
+			game.players[playerId].DuplicateUnits = append(game.players[playerId].DuplicateUnits, &tmpUnit)
 		}
 		if tmpUnit.IsHasted {
-			game.players[playerId].HastedUnits = append(game.players[playerId].HastedUnits, tmpUnit)
+			game.players[playerId].HastedUnits = append(game.players[playerId].HastedUnits, &tmpUnit)
 		}
 		if wasPlayedThisTurn {
-			game.players[playerId].PlayedUnits = append(game.players[playerId].PlayedUnits, tmpUnit)
+			game.players[playerId].PlayedUnits = append(game.players[playerId].PlayedUnits, &tmpUnit)
 		}
-		game.Map.Units = append(game.Map.Units, tmpUnit)
+		game.Map.Units = append(game.Map.Units, &tmpUnit)
 		game.Map.UnitsInCell[tmpUnit.Cell.Row][tmpUnit.Cell.Col] =
-			append(game.Map.UnitsInCell[tmpUnit.Cell.Row][tmpUnit.Cell.Col], tmpUnit) //TODO pointers or ID
+			append(game.Map.UnitsInCell[tmpUnit.Cell.Row][tmpUnit.Cell.Col], &tmpUnit) //TODO pointers or ID
 	}
 	deadUnits := root["units"].([]interface{}) // get baseUnit by TypeId
 	for _, unit := range deadUnits {
@@ -155,7 +159,7 @@ func (game *Game) HandleTurnMessage(msg Message) {
 		var tmpUnit Unit
 		mapToStruct(unit, &tmpUnit)
 		tmpUnit.BaseUnit = baseUnit
-		game.players[playerId].DiedUnits = append(game.players[playerId].DiedUnits, tmpUnit)
+		game.players[playerId].DiedUnits = append(game.players[playerId].DiedUnits, &tmpUnit)
 	}
 	castSpells, ok := root["castSpells"].([]interface{})
 	if !ok {
@@ -165,7 +169,7 @@ func (game *Game) HandleTurnMessage(msg Message) {
 		game.players[i].CastUnitSpell = nil
 		game.players[i].CastAreaSpell = nil
 	}
-	game.castSpells = make([]CastSpell, 0)
+	game.castSpells = make([]*CastSpell, 0)
 
 	for _, castSpell := range castSpells {
 		var typeId int
@@ -193,18 +197,18 @@ func (game *Game) HandleTurnMessage(msg Message) {
 	mapToStruct(root["receivedSpell"], &tmpSpellId)
 	game.receivedSpell = game.GetSpellById(tmpSpellId)
 	mapToStruct(root["friendReceivedSpell"], &tmpSpellId)
-	var tmpSpells = make([]Spell, 0)
+	var tmpSpells = make([]*Spell, 0)
 	var mySpells []int
 	mapToStruct(root["mySpells"], &mySpells)
 	for _, spellId := range mySpells {
-		tmpSpells = append(tmpSpells, *game.GetSpellById(spellId))
+		tmpSpells = append(tmpSpells, game.GetSpellById(spellId))
 	}
 	game.players[game.myId].Spells = tmpSpells
-	tmpSpells = make([]Spell, 0)
+	tmpSpells = make([]*Spell, 0)
 	var friendSpells []int
 	mapToStruct(root["friendSpells"], &friendSpells)
 	for _, spellId := range friendSpells {
-		tmpSpells = append(tmpSpells, *game.GetSpellById(spellId))
+		tmpSpells = append(tmpSpells, game.GetSpellById(spellId))
 	}
 	game.players[game.friendId].Spells = tmpSpells
 	game.gotRangeUpgrade = root["gotRangeUpgrade"].(bool)
@@ -238,19 +242,19 @@ func (game Game) ChooseDeck(heroIds []int) {
 }
 
 func (game Game) GetMe() *Player {
-	return &game.players[game.myId]
+	return game.players[game.myId]
 }
 
 func (game Game) GetFriend() *Player {
-	return &game.players[game.friendId]
+	return game.players[game.friendId]
 }
 
 func (game Game) GetFirstEnemy() *Player {
-	return &game.players[game.firstEnemy]
+	return game.players[game.firstEnemy]
 }
 
 func (game Game) GetSecondEnemy() *Player {
-	return &game.players[game.secondEnemy]
+	return game.players[game.secondEnemy]
 }
 
 func (game Game) PutUnit(typeId, pathId int) {
@@ -282,7 +286,7 @@ func (game Game) UpgradeUnitDamage(unitId int) {
 func (game Game) GetSpellById(typeId int) *Spell {
 	for _, spell := range game.spells {
 		if spell.TypeId == typeId {
-			return &spell
+			return spell
 		}
 	}
 	return nil
@@ -291,7 +295,7 @@ func (game Game) GetSpellById(typeId int) *Spell {
 func (game Game) GetBaseUnitById(typeId int) *BaseUnit {
 	for _, baseUnit := range game.baseUnits {
 		if baseUnit.TypeId == typeId {
-			return &baseUnit
+			return baseUnit
 		}
 	}
 	return nil
@@ -300,7 +304,7 @@ func (game Game) GetBaseUnitById(typeId int) *BaseUnit {
 func (game Game) GetPathById(pathId int) *Path {
 	for _, path := range game.Map.Paths {
 		if pathId == path.Id {
-			return &path
+			return path
 		}
 	}
 	return nil
@@ -310,13 +314,13 @@ func (game Game) getFriendId(playerId int) int {
 	return playerId ^ 2 //TODO make sure this is valid
 }
 
-func (game Game) GetPathsFromPlayer(playerId int) []Path { //TODO friend paths
-	paths := make([]Path, 0)
-	friendPath := game.GetPathToFriend(playerId)
+func (game Game) getPathsFromPlayer(playerId int) []*Path { //TODO friend paths
+	paths := make([]*Path, 0)
+	friendPath := game.getPathToFriend(playerId)
 	for _, path := range game.Map.Paths {
 		if path.Id != friendPath.Id {
-			startCell := path.Cells[0]
-			endCell := path.Cells[len(path.Cells)-1]
+			startCell := *path.Cells[0]
+			endCell := *path.Cells[len(path.Cells)-1]
 			playerCell := game.players[playerId].GetPlayerPosition()
 			if startCell == playerCell || endCell == playerCell {
 				paths = append(paths, path)
@@ -326,25 +330,25 @@ func (game Game) GetPathsFromPlayer(playerId int) []Path { //TODO friend paths
 	return paths
 }
 
-func (game Game) GetPathToFriend(playerId int) *Path {
-	for _, path := range game.Map.Paths {
-		startCell := path.Cells[0]
-		endCell := path.Cells[len(path.Cells)-1]
+func (game Game) getPathToFriend(playerId int) *Path {
+	for i, path := range game.Map.Paths {
+		startCell := *path.Cells[0]
+		endCell := *path.Cells[len(path.Cells)-1]
 		myCell := game.players[playerId].GetPlayerPosition()
 		friendCell := game.players[game.getFriendId(playerId)].GetPlayerPosition()
 		if (startCell == myCell && endCell == friendCell) ||
 			(startCell == friendCell && endCell == myCell) {
-			return &path //TODO Is there such a path?
+			return game.Map.Paths[i]
 		}
 	}
 	return nil
 }
 
-func (game Game) GetPathsCrossingCell(cell Cell) []Path {
-	paths := make([]Path, 0)
+func (game Game) GetPathsCrossingCell(cell Cell) []*Path {
+	paths := make([]*Path, 0)
 	for _, path := range game.Map.Paths {
 		for _, cell1 := range path.Cells {
-			if cell1 == cell {
+			if *cell1 == cell {
 				paths = append(paths, path)
 				break
 			}
@@ -353,25 +357,25 @@ func (game Game) GetPathsCrossingCell(cell Cell) []Path {
 	return paths
 }
 
-func (game Game) GetCellUnits(cell Cell) []Unit {
+func (game Game) GetCellUnits(cell Cell) []*Unit {
 	if !game.isValid(cell) {
-		return []Unit{}
+		return []*Unit{}
 	}
 	return game.Map.UnitsInCell[cell.Row][cell.Col]
 }
 
-func (game Game) GetShortestPathToCell(playerId int, cell Cell) Path {
-	var ans Path
+func (game Game) GetShortestPathToCell(playerId int, cell Cell) *Path {
+	var ans *Path
 	var minAns = -1
-	friendPathLen := len(game.GetPathToFriend(playerId).Cells)
+	//friendPathLen := len(game.getPathToFriend(playerId).Cells)
 	for _, path := range game.Map.Paths {
-		startCell := path.Cells[0]
-		endCell := path.Cells[len(path.Cells)-1]
+		startCell := *path.Cells[0]
+		endCell := *path.Cells[len(path.Cells)-1]
 		playerCell := game.players[playerId].GetPlayerPosition()
-		friendCell := game.players[game.getFriendId(playerId)].GetPlayerPosition()
+		//friendCell := game.players[game.getFriendId(playerId)].GetPlayerPosition()
 		if startCell == playerCell {
 			for i := range path.Cells {
-				if path.Cells[i] == cell && (minAns == -1 || i < minAns) {
+				if *path.Cells[i] == cell && (minAns == -1 || i < minAns) {
 					minAns = i
 					ans = path
 					break
@@ -381,16 +385,16 @@ func (game Game) GetShortestPathToCell(playerId int, cell Cell) Path {
 		if endCell == playerCell {
 			lng := len(path.Cells) - 1
 			for i := range path.Cells {
-				if path.Cells[lng-i] == cell && (minAns == -1 || i < minAns) {
+				if *path.Cells[lng-i] == cell && (minAns == -1 || i < minAns) {
 					minAns = i
 					ans = path
 					break
 				}
 			}
 		}
-		if startCell == friendCell {
+		/*if startCell == friendCell {
 			for i := range path.Cells {
-				if path.Cells[i] == cell && (minAns == -1 || i+friendPathLen < minAns) {
+				if *path.Cells[i] == cell && (minAns == -1 || i+friendPathLen < minAns) {
 					minAns = i + friendPathLen
 					ans = path
 					break
@@ -400,13 +404,13 @@ func (game Game) GetShortestPathToCell(playerId int, cell Cell) Path {
 		if endCell == friendCell {
 			lng := len(path.Cells) - 1
 			for i := range path.Cells {
-				if path.Cells[lng-i] == cell && (minAns == -1 || i+friendPathLen < minAns) {
+				if *path.Cells[lng-i] == cell && (minAns == -1 || i+friendPathLen < minAns) {
 					minAns = i + friendPathLen
 					ans = path
 					break
 				}
 			}
-		}
+		}*/ //TODO paths from friend?
 	}
 	return ans
 }
@@ -471,8 +475,8 @@ func (game Game) GetPickTimeout() int64 {
 	return game.gameConstants.PickTimeout
 }
 
-func (game Game) GetAreaSpellTargets(center Cell, spellId int) []Unit {
-	units := make([]Unit, 0)
+func (game Game) GetAreaSpellTargets(center Cell, spellId int) []*Unit {
+	units := make([]*Unit, 0)
 	spell := game.GetSpellById(spellId)
 	for i := center.Row - spell.Range; i <= center.Row+spell.Range; i++ {
 		for j := center.Col - spell.Range; j <= center.Col+spell.Range; j++ {
@@ -490,25 +494,25 @@ func (game Game) GetDamageUpgradeNumber() int {
 	return game.availableDamageUpgrades
 }
 
-func (game Game) GetSpellsList() []Spell {
+func (game Game) GetSpellsList() []*Spell {
 	return game.players[game.myId].Spells
 }
 
 func (game Game) GetSpells() map[Spell]int {
 	spellMap := make(map[Spell]int, 0)
 	for _, spell := range game.GetSpellsList() {
-		var val, ok = spellMap[spell]
+		var val, ok = spellMap[*spell]
 		if !ok {
-			spellMap[spell] = 1
+			spellMap[*spell] = 1
 		} else {
-			spellMap[spell] = val + 1
+			spellMap[*spell] = val + 1
 		}
 	}
 	return spellMap
 }
 
-func (game Game) GetPlayerDuplicateUnits(playerId int) []Unit {
-	res := make([]Unit, 0)
+func (game Game) GetPlayerDuplicateUnits(playerId int) []*Unit {
+	res := make([]*Unit, 0)
 	for _, unit := range game.Map.Units {
 		if unit.IsDuplicate && unit.PlayerId == playerId {
 			res = append(res, unit)
@@ -517,8 +521,8 @@ func (game Game) GetPlayerDuplicateUnits(playerId int) []Unit {
 	return res
 }
 
-func (game Game) GetPlayerHastedUnits(playerId int) []Unit {
-	res := make([]Unit, 0)
+func (game Game) GetPlayerHastedUnits(playerId int) []*Unit {
+	res := make([]*Unit, 0)
 	for _, unit := range game.Map.Units {
 		if unit.IsHasted && unit.PlayerId == playerId {
 			res = append(res, unit)
@@ -534,15 +538,15 @@ func (game Game) isValid(cell Cell) bool {
 func (game Game) GetUnitById(unitId int) *Unit {
 	for _, unit := range game.Map.Units {
 		if unit.UnitId == unitId {
-			return &unit
+			return unit
 		}
 	}
 	return nil
 }
 func (game Game) getCastSpellById(id int) *CastSpell {
 	for _, c := range game.castSpells {
-		if c.GetId() == id {
-			return &c
+		if (*c).GetId() == id {
+			return c
 		}
 	}
 	return nil
@@ -552,16 +556,12 @@ func (game Game) isUnitSpell(typeId int) bool {
 	return game.GetSpellById(typeId).Type == "TELE" //TODO avoid hard coding
 }
 
-func (game Game) GetAllBaseUnits() []BaseUnit {
-	baseUnits := make([]BaseUnit, len(game.baseUnits))
-	copy(baseUnits, game.baseUnits)
-	return baseUnits
+func (game Game) GetAllBaseUnits() []*BaseUnit {
+	return game.baseUnits
 }
 
-func (game Game) GetAllSpells() []Spell {
-	spells := make([]Spell, len(game.spells))
-	copy(spells, game.spells)
-	return spells
+func (game Game) GetAllSpells() []*Spell {
+	return game.spells
 }
 
 func (game Game) GetKingById(playerId int) *King {
@@ -577,5 +577,5 @@ func (game Game) GetMap() *Map {
 }
 
 func (game Game) GetPlayerById(playerId int) *Player {
-	return &game.players[playerId]
+	return game.players[playerId]
 }

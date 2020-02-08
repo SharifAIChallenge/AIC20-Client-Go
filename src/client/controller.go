@@ -4,6 +4,7 @@ import (
 	"../common/log"
 	. "../common/network/data"
 	. "./model"
+	"encoding/json"
 	"os"
 	"time"
 )
@@ -53,30 +54,48 @@ func (controller Controller) handleMessages() {
 func (controller Controller) handleInitMessage(msg Message) {
 	//TODO make new Game
 	controller.game.HandleInitMessage(msg)
-	controller.pick(controller.game.GetCurrentTurn())
+	controller.pick(controller.game)
 }
 
 func (controller Controller) handleTurnMessage(msg Message) {
 	//TODO make new game
 	controller.game.HandleTurnMessage(msg)
-	controller.turn(controller.game.GetCurrentTurn())
+	controller.turn(controller.game)
 }
 
 func (controller Controller) handleShutdownMessage(msg Message) {
+	info := msg.Args.(map[string]interface{})
+	controller.game.HandleTurnMessage(Message{Name: msg.Name, Args: info["turnMessage"], Turn: msg.Turn})
+	var scoresList []map[string]int
+	mapToStruct(info["scores"], &scoresList)
+	scores := make(map[int]int)
+	for _, score := range scoresList {
+		scores[score["playerId"]] = score["score"]
+	}
+	controller.end(controller.game, scores)
 	controller.network.terminate()
 	os.Exit(0)
 }
 
-func (controller Controller) pick(turnNumber int) {
+func mapToStruct(mp interface{}, v interface{}) {
+	js, _ := json.Marshal(mp)
+	_ = json.Unmarshal(js, v)
+}
+
+func (controller Controller) pick(game *Game) {
 	go func() {
-		pick(controller.game)
-		controller.sender <- Message{Name: "endTurn", Args: map[string]interface{}{}, Turn: turnNumber}
+		pick(game)
+		controller.sender <- Message{Name: "endTurn", Args: map[string]interface{}{}, Turn: 0}
 	}()
 }
 
-func (controller Controller) turn(turnNumber int) {
+func (controller Controller) turn(game *Game) {
 	go func() {
-		turn(controller.game)
-		controller.sender <- Message{Name: "endTurn", Args: map[string]interface{}{}, Turn: turnNumber}
+		turn(game)
+		controller.sender <- Message{Name: "endTurn", Args: map[string]interface{}{}, Turn: game.GetCurrentTurn()}
 	}()
+}
+
+func (controller Controller) end(game *Game, scores map[int]int) {
+	end(game, scores)
 }

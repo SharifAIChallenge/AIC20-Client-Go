@@ -6,19 +6,19 @@ type Player struct {
 	Hand               []int          `json:"hand"`
 	Ap                 int            `json:"ap"`
 	King               *King          `json:"king"`
-	PathsFromPlayer    []Path         `json:"pathsFromPlayer"` //TODO
-	PathToFriend       []Path         `json:"pathToFriend"`    //TODO
-	Units              []Unit         `json:"units"`
+	PathsFromPlayer    []*Path        `json:"pathsFromPlayer"` //TODO
+	PathToFriend       *Path          `json:"pathToFriend"`    //TODO
+	Units              []*Unit        `json:"units"`
 	CastAreaSpell      *CastAreaSpell `json:"castAreaSpell"`
 	CastUnitSpell      *CastUnitSpell `json:"castUnitSpell"`
-	DuplicateUnits     []Unit         `json:"duplicateUnits"`
-	HastedUnits        []Unit         `json:"hastedUnits"`
-	PlayedUnits        []Unit         `json:"playedUnits"`
-	DiedUnits          []Unit         `json:"diedUnits"`
+	DuplicateUnits     []*Unit        `json:"duplicateUnits"`
+	HastedUnits        []*Unit        `json:"hastedUnits"`
+	PlayedUnits        []*Unit        `json:"playedUnits"`
+	DiedUnits          []*Unit        `json:"diedUnits"`
 	RangeUpgradedUnit  *Unit          `json:"rangeUpgradedUnit"`
 	DamageUpgradedUnit *Unit          `json:"damageUpgradedUnit"`
 	UpgradeTokens      int            `json:"upgradeTokens"`
-	Spells             []Spell        `json:"spells"`
+	Spells             []*Spell       `json:"spells"`
 }
 
 func (player Player) isAlive() bool {

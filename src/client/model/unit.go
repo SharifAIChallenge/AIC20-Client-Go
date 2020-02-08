@@ -9,12 +9,12 @@ type Unit struct {
 	Target         *Unit
 	TargetCell     *Cell `json:"targetCell"`
 	TargetIfKing   *King
-	PlayerId       int         `json:"playerId"`
-	DamageLevel    int         `json:"damageLevel"`
-	RangeLevel     int         `json:"rangeLevel"`
-	Range          int         `json:"range"`
-	Attack         int         `json:"attack"`
-	IsDuplicate    bool        `json:"isDuplicate"`
-	IsHasted       bool        `json:"isHasted"`
-	AffectedSpells []CastSpell `json:"affectedCastSpells"` //TODO CastSpellsOnUnit
+	PlayerId       int          `json:"playerId"`
+	DamageLevel    int          `json:"damageLevel"`
+	RangeLevel     int          `json:"rangeLevel"`
+	Range          int          `json:"range"`
+	Attack         int          `json:"attack"`
+	IsDuplicate    bool         `json:"isDuplicate"`
+	IsHasted       bool         `json:"isHasted"`
+	AffectedSpells []*CastSpell `json:"affectedCastSpells"` //TODO CastSpellsOnUnit
 }
