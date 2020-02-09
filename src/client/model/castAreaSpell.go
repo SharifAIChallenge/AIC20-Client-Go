@@ -1,14 +1,12 @@
 package model
 
 type CastAreaSpell struct {
-	TypeId         int `json:"typeId"`
 	Spell          *Spell
 	Id             int   `json:"id"`
 	CasterId       int   `json:"casterId"`
 	Cell           *Cell `json:"cell"`
-	AffectedUnits  []int `json:"affectedUnits"`
+	AffectedUnits  []*Unit
 	RemainingTurns int   `json:"remainingTurns"`
-	CastThisTurn   bool  `json:"wasCastThisTurn"` //TODO remove
 }
 
 func (c CastAreaSpell) GetId() int {
@@ -27,10 +25,6 @@ func (c CastAreaSpell) GetCell() *Cell {
 	return c.Cell
 }
 
-func (c CastAreaSpell) GetAffectedUnits() []int {
+func (c CastAreaSpell) GetAffectedUnits() []*Unit {
 	return c.AffectedUnits
-}
-
-func (c CastAreaSpell) WasCastThisTurn() bool {
-	return c.WasCastThisTurn()
 }

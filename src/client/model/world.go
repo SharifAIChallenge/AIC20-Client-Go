@@ -7,15 +7,15 @@ type World interface { //TODO make it have pointer arguments?
 	GetFirstEnemy() *Player
 	GetSecondEnemy() *Player
 	GetMap() *Map
-	GetPathsCrossingCell(cell Cell) []*Path //TODO Overload
-	GetCellUnits(cell Cell) []*Unit
-	GetShortestPathToCell(playerId int, cell Cell) *Path
+	GetPathsCrossingCell(cell *Cell) []*Path //TODO Overload
+	GetCellUnits(cell *Cell) []*Unit
+	GetShortestPathToCell(playerId int, cell *Cell) *Path
 	PutUnit(typeId, pathId int)
 	GetCurrentTurn() int
 	GetRemainingTime() int64
-	CastUnitSpell(unitId, pathId int, cell Cell, spellId int) //TODO Overload :( for spell?
-	CastAreaSpell(center Cell, spellId int)                   //TODO Overload
-	GetAreaSpellTargets(center Cell, spellId int) []*Unit     //TODO overload
+	CastUnitSpell(unitId, pathId int, cell *Cell, spellId int) //TODO Overload :( for spell?
+	CastAreaSpell(center *Cell, spellId int)                   //TODO Overload
+	GetAreaSpellTargets(center *Cell, spellId int) []*Unit     //TODO overload
 	GetRemainingTurnsToUpgrade() int
 	GetRemainingTurnsToGetSpell() int
 	GetRangeUpgradeNumber() int

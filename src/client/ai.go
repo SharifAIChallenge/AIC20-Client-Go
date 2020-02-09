@@ -2,6 +2,7 @@ package main
 
 import (
 	"./model"
+	"fmt"
 )
 
 func pick(world model.World) {
@@ -13,13 +14,27 @@ func pick(world model.World) {
 }
 
 func turn(world model.World) {
-	//fmt.Println(world.GetDeck())
-	//if len(world.GetSpells()) > 0 {
-	//	world.CastAreaSpell(world.getPathsFromPlayer(world.GetMyId())[0].Cells[0], world.GetSpellsList()[0].TypeId)
-	//}
-	//fmt.Println(world.GetCastAreaSpell(world.GetMyId()))
-	//world.PutUnit(world.GetHand()[0].TypeId, world.getPathsFromPlayer(world.GetMyId())[0].Id)
-	//fmt.Println(world.GetPlayerUnits(world.GetMyId()))
+	var me=world.GetMe()
+	if len(world.GetAllSpells()) > 0 {
+
+		world.CastAreaSpell(me.PathsFromPlayer[0].Cells[0], world.GetAllSpells()[0].TypeId)
+	}
+	world.PutUnit(me.Hand[0].TypeId, me.PathsFromPlayer[0].Id)
+	fmt.Println("|||||||||||||||||| currTurn",world.GetCurrentTurn())
+	var cell=world.GetMap().GetCell(6,6)
+	var paths=world.GetPathsCrossingCell(cell)
+	for _,path := range paths {
+		fmt.Println("|||||")
+		for _,cell := range path.Cells {
+			fmt.Println(*cell)
+		}
+	}
+	fmt.Println("|||||||||||||||||||||||| King",world.GetMe().King.Center.Row," ",world.GetMe().King.Center.Col)
+	var path=world.GetShortestPathToCell(world.GetMe().PlayerId,&model.Cell{Row: 6,Col:6})
+	fmt.Println("|||||")
+	for _,cell := range path.Cells {
+		fmt.Println(*cell)
+	}
 }
 
 func end(world model.World, scores map[int]int) {

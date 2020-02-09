@@ -3,6 +3,7 @@ package model
 import (
 	. "../../common/network/data"
 	"encoding/json"
+	"fmt"
 	"time"
 )
 
@@ -20,7 +21,6 @@ type Game struct {
 	availableDamageUpgrades int
 	rangeUpgradedUnit       int
 	damageUpgradedUnit      int
-	remainingAP             int
 
 	startTime int64
 
@@ -28,7 +28,17 @@ type Game struct {
 
 	myId, friendId, firstEnemy, secondEnemy int
 	receivedSpell, friendReceivedSpell      *Spell
-	sender                                  chan Message
+
+	shortestPaths [4]map[Cell]*Path
+	pathsCrossing map[Cell][]*Path
+
+	unitById      map[int]*Unit
+	pathById      map[int]*Path
+	spellById     map[int]*Spell
+	castSpellById map[int]*CastSpell
+	baseUnitById  map[int]*BaseUnit
+
+	sender chan Message
 }
 
 func NewGame(sender chan Message) *Game {
@@ -39,6 +49,13 @@ func (game *Game) HandleInitMessage(msg Message) {
 	root := msg.Args.(map[string]interface{}) //TODO make it work?
 	mapToStruct(root["gameConstants"], &game.gameConstants)
 	mapToStruct(root["map"], &game.Map)
+	game.Map.Cells = make([][]*Cell,0)
+	for i := 0; i < game.Map.RowNum; i++ {
+		game.Map.Cells = append(game.Map.Cells,make([]*Cell,0))
+		for j := 0; j < game.Map.ColNum; j++ {
+			game.Map.Cells[i] = append(game.Map.Cells[i] , &Cell{Row: i, Col: j})
+		}
+	}
 	for _, king := range game.Map.Kings {
 		game.players[king.PlayerId] = &Player{King: king, PlayerId: king.PlayerId}
 	}
@@ -49,6 +66,10 @@ func (game *Game) HandleInitMessage(msg Message) {
 
 	mapToStruct(root["baseUnits"], &game.baseUnits)
 	spells := root["spells"].([]interface{})
+	game.pathsCrossing = make(map[Cell][]*Path)
+	game.baseUnitById = make(map[int]*BaseUnit)
+	game.spellById = make(map[int]*Spell)
+	game.pathById = make(map[int]*Path)
 	for _, spell := range spells {
 		var tmpSpell Spell
 		mapToStruct(spell, &tmpSpell)
@@ -57,27 +78,32 @@ func (game *Game) HandleInitMessage(msg Message) {
 	for i := 0; i < 4; i++ {
 		game.players[i].PathToFriend = game.getPathToFriend(i)
 		game.players[i].PathsFromPlayer = game.getPathsFromPlayer(i)
+		game.shortestPaths[i] = make(map[Cell]*Path)
 	}
 	game.startTime = time.Now().UnixNano()
 }
 func (game *Game) HandleTurnMessage(msg Message) {
+	fmt.Println("Received Turn Message!")
+
+	game.unitById = make(map[int]*Unit)
+	game.castSpellById = make(map[int]*CastSpell)
+	for i := 0; i < 4; i++ {
+		game.players[i].spellCount = make(map[int]int)
+	}
 	root := msg.Args.(map[string]interface{})
 	mapToStruct(root["currTurn"], &game.currentTurn)
-	mapToStruct(root["deck"], &game.players[game.myId].Deck)
-	mapToStruct(root["hand"], &game.players[game.myId].Hand)
-	kings := root["kings"].([]interface{})
-	for _, king := range kings {
-		var playerId int
-		mapToStruct(king.(map[string]interface{})["playerId"], &playerId)
-		game.players[playerId].King.IsAlive = king.(map[string]interface{})["isAlive"].(bool)
-		mapToStruct(king.(map[string]interface{})["hp"], &game.players[playerId].King.Hp)
-		var targetId int
-		mapToStruct(king.(map[string]interface{})["target"], &targetId)
-		if targetId != -1 {
-			tmpUnit := game.GetUnitById(targetId)
-			game.players[playerId].King.Target = tmpUnit
-			game.players[playerId].King.Target = tmpUnit
-		}
+
+	var tmpCards []int
+	game.players[game.myId].Deck = make([]*BaseUnit, 0)
+	mapToStruct(root["deck"], &tmpCards)
+	for _, unitId := range tmpCards {
+		game.players[game.myId].Deck = append(game.players[game.myId].Deck, game.GetBaseUnitById(unitId))
+	}
+
+	game.players[game.myId].Hand = make([]*BaseUnit, 0)
+	mapToStruct(root["hand"], &tmpCards)
+	for _, unitId := range tmpCards {
+		game.players[game.myId].Hand = append(game.players[game.myId].Hand, game.GetBaseUnitById(unitId))
 	}
 
 	game.Map.Units = make([]*Unit, 0)
@@ -103,38 +129,32 @@ func (game *Game) HandleTurnMessage(msg Message) {
 		mapToStruct(unit.(map[string]interface{})["playerId"], &playerId)
 		var pathId int
 		mapToStruct(unit.(map[string]interface{})["pathId"], &pathId)
-		var targetId int
-		mapToStruct(unit.(map[string]interface{})["target"], &targetId)
 		var wasPlayedThisTurn bool
 		mapToStruct(unit.(map[string]interface{})["wasPlayedThisTurn"], &wasPlayedThisTurn)
+		var wasDamageUpgraded bool
+		mapToStruct(unit.(map[string]interface{})["wasDamageUpgraded"], &wasDamageUpgraded)
+		var wasRangeUpgraded bool
+		mapToStruct(unit.(map[string]interface{})["wasRangeUpgraded"], &wasRangeUpgraded)
 		var affectedSpells []int
 		mapToStruct(unit.(map[string]interface{})["affectedSpells"], &affectedSpells)
 		baseUnit := game.GetBaseUnitById(typeId)
-		path := game.GetPathById(pathId)
-		target := game.GetUnitById(targetId)
+		path := game.getPathById(pathId)
 		var tmpUnit Unit
+		delete(unit.(map[string]interface{}), "target")
+		delete(unit.(map[string]interface{}), "affectedSpells")
+		delete(unit.(map[string]interface{}), "typeId")
+		delete(unit.(map[string]interface{}), "wasDamageUpgraded")
+		delete(unit.(map[string]interface{}), "wasRangeUpgraded")
+
 		mapToStruct(unit, &tmpUnit)
+		if wasDamageUpgraded {
+			game.GetPlayerById(playerId).DamageUpgradedUnit = &tmpUnit
+		}
+		if wasRangeUpgraded {
+			game.GetPlayerById(playerId).RangeUpgradedUnit = &tmpUnit
+		}
 		tmpUnit.BaseUnit = baseUnit
 		tmpUnit.Path = path
-		targetIsKing := false
-		var targetIfKing *King = nil
-		for i := 0; i < 4; i++ {
-			if targetId == game.players[i].PlayerId {
-				targetIsKing = true
-				targetIfKing = game.players[i].King
-			}
-		}
-		if targetId != -1 && !targetIsKing {
-			tmpUnit.Target = target
-		} else if targetIsKing {
-			tmpUnit.TargetIfKing = targetIfKing
-		}
-		tmpUnit.AffectedSpells = make([]*CastSpell, 0)
-		for _, castSpellId := range affectedSpells {
-			affectedSpell := game.getCastSpellById(castSpellId)
-			tmpUnit.AffectedSpells = append(tmpUnit.AffectedSpells, affectedSpell)
-		}
-
 		game.players[playerId].Units = append(game.players[playerId].Units, &tmpUnit)
 		if tmpUnit.IsDuplicate {
 			game.players[playerId].DuplicateUnits = append(game.players[playerId].DuplicateUnits, &tmpUnit)
@@ -149,17 +169,64 @@ func (game *Game) HandleTurnMessage(msg Message) {
 		game.Map.UnitsInCell[tmpUnit.Cell.Row][tmpUnit.Cell.Col] =
 			append(game.Map.UnitsInCell[tmpUnit.Cell.Row][tmpUnit.Cell.Col], &tmpUnit) //TODO pointers or ID
 	}
-	deadUnits := root["units"].([]interface{}) // get baseUnit by TypeId
+
+	for _, unit := range units {
+		var unitId int
+		mapToStruct(unit.(map[string]interface{})["unitId"], &unitId)
+		var targetId int
+		mapToStruct(unit.(map[string]interface{})["target"], &targetId)
+		target := game.GetUnitById(targetId)
+		tmpUnit := game.GetUnitById(unitId)
+		targetIsKing := false
+		var targetIfKing *King = nil
+		for i := 0; i < 4; i++ {
+			if targetId == game.players[i].PlayerId {
+				targetIsKing = true
+				targetIfKing = game.players[i].King
+			}
+		}
+		if targetId != -1 && !targetIsKing {
+			tmpUnit.Target = target
+		} else if targetIsKing {
+			tmpUnit.TargetIfKing = targetIfKing
+		}
+	}
+
+	deadUnits := root["diedUnits"].([]interface{}) // get baseUnit by TypeId
 	for _, unit := range deadUnits {
 		var typeId int
 		mapToStruct(unit.(map[string]interface{})["typeId"], &typeId)
 		var playerId int
-		mapToStruct(unit.(map[string]interface{})["playerId"], &playerId) //TODO do dead units need something else?
+		mapToStruct(unit.(map[string]interface{})["playerId"], &playerId)
+		var pathId int
+		mapToStruct(unit.(map[string]interface{})["pathId"], &pathId)
 		baseUnit := game.GetBaseUnitById(typeId)
+		path := game.getPathById(pathId)
 		var tmpUnit Unit
+		delete(unit.(map[string]interface{}), "target")
+		delete(unit.(map[string]interface{}), "affectedSpells")
+		delete(unit.(map[string]interface{}), "typeId")
+		delete(unit.(map[string]interface{}), "wasDamageUpgraded")
+		delete(unit.(map[string]interface{}), "wasRangeUpgraded")
+
 		mapToStruct(unit, &tmpUnit)
 		tmpUnit.BaseUnit = baseUnit
+		tmpUnit.Path = path
 		game.players[playerId].DiedUnits = append(game.players[playerId].DiedUnits, &tmpUnit)
+	}
+	kings := root["kings"].([]interface{})
+	for _, king := range kings {
+		var playerId int
+		mapToStruct(king.(map[string]interface{})["playerId"], &playerId)
+		game.players[playerId].King.IsAlive = king.(map[string]interface{})["isAlive"].(bool)
+		mapToStruct(king.(map[string]interface{})["hp"], &game.players[playerId].King.Hp)
+		var targetId int
+		mapToStruct(king.(map[string]interface{})["target"], &targetId)
+		if targetId != -1 {
+			tmpUnit := game.GetUnitById(targetId)
+			game.players[playerId].King.Target = tmpUnit
+			game.players[playerId].King.TargetCell = tmpUnit.Cell
+		}
 	}
 	castSpells, ok := root["castSpells"].([]interface{})
 	if !ok {
@@ -172,27 +239,68 @@ func (game *Game) HandleTurnMessage(msg Message) {
 	game.castSpells = make([]*CastSpell, 0)
 
 	for _, castSpell := range castSpells {
+		tmpMP := castSpell.(map[string]interface{})
 		var typeId int
-		mapToStruct(castSpell.(map[string]interface{})["typeId"], &typeId)
+		mapToStruct(tmpMP["typeId"], &typeId)
 		var playerId int
-		mapToStruct(castSpell.(map[string]interface{})["casterId"], &playerId)
-		thisTurn := castSpell.(map[string]interface{})["wasCastThisTurn"].(bool)
+		mapToStruct(tmpMP["casterId"], &playerId)
+		thisTurn := tmpMP["wasCastThisTurn"].(bool)
+		var affectedUnits []int
+		mapToStruct(tmpMP["affectedUnits"], &affectedUnits)
 		if game.isUnitSpell(typeId) {
+			var unitId int
+			mapToStruct(tmpMP["unit"], &unitId)
+			var pathId int
+			mapToStruct(tmpMP["path"], &pathId)
+			delete(tmpMP, "typeId")
+			delete(tmpMP, "affectedUnits")
+			delete(tmpMP, "unit")
+			delete(tmpMP, "path")
+			delete(tmpMP, "wasCastThisTurn")
 			var tmpCastSpell CastUnitSpell
-			mapToStruct(castSpell, &tmpCastSpell)
+			mapToStruct(tmpMP, &tmpCastSpell)
+			tmpCastSpell.Spell = game.GetSpellById(typeId)
+			tmpCastSpell.Path = game.getPathById(pathId)
+			tmpCastSpell.Unit = game.GetUnitById(unitId)
+			tmpCastSpell.AffectedUnits = make([]*Unit, 0)
+			for _, unitId = range affectedUnits {
+				tmpCastSpell.AffectedUnits = append(tmpCastSpell.AffectedUnits, game.GetUnitById(unitId))
+			}
 			if thisTurn {
 				game.players[playerId].CastUnitSpell = &tmpCastSpell
 			}
 			castSpells = append(castSpells, tmpCastSpell)
 		} else {
+			delete(tmpMP, "typeId")
+			delete(tmpMP, "affectedUnits")
+			delete(tmpMP, "wasCastThisTurn")
 			var tmpCastSpell CastAreaSpell
-			mapToStruct(castSpell, &tmpCastSpell)
+			mapToStruct(tmpMP, &tmpCastSpell)
+			tmpCastSpell.Spell = game.GetSpellById(typeId)
+			tmpCastSpell.AffectedUnits = make([]*Unit, 0)
+			for _, unitId := range affectedUnits {
+				tmpCastSpell.AffectedUnits = append(tmpCastSpell.AffectedUnits, game.GetUnitById(unitId))
+			}
 			if thisTurn {
 				game.players[playerId].CastAreaSpell = &tmpCastSpell
 			}
 			castSpells = append(castSpells, tmpCastSpell)
 		}
 	}
+
+	for _, unit := range units {
+		var unitId int
+		mapToStruct(unit.(map[string]interface{})["unitId"], &unitId)
+		var affectedSpells []int
+		mapToStruct(unit.(map[string]interface{})["affectedSpells"], &affectedSpells)
+		var tmpUnit = game.GetUnitById(unitId)
+		tmpUnit.AffectedSpells = make([]*CastSpell, 0)
+		for _, castSpellId := range affectedSpells {
+			affectedSpell := game.getCastSpellById(castSpellId)
+			tmpUnit.AffectedSpells = append(tmpUnit.AffectedSpells, affectedSpell)
+		}
+	}
+
 	var tmpSpellId int
 	mapToStruct(root["receivedSpell"], &tmpSpellId)
 	game.receivedSpell = game.GetSpellById(tmpSpellId)
@@ -215,21 +323,16 @@ func (game *Game) HandleTurnMessage(msg Message) {
 	game.gotDamageUpgrade = root["gotDamageUpgrade"].(bool)
 	mapToStruct(root["availableRangeUpgrades"], &game.availableRangeUpgrades)
 	mapToStruct(root["availableDamageUpgrades"], &game.availableDamageUpgrades)
-	mapToStruct(root["rangeUpgradedUnit"], &game.rangeUpgradedUnit)
-	mapToStruct(root["damageUpgradedUnit"], &game.damageUpgradedUnit)
-	if game.gotRangeUpgrade {
-		game.players[game.myId].RangeUpgradedUnit = game.GetUnitById(game.rangeUpgradedUnit)
-	}
-	if game.gotDamageUpgrade {
-		game.players[game.myId].DamageUpgradedUnit = game.GetUnitById(game.damageUpgradedUnit)
-	}
-	mapToStruct(root["remainingAP"], &game.remainingAP)
+	mapToStruct(root["remainingAP"], &game.GetMe().Ap)
 	game.startTime = time.Now().UnixNano()
 }
 
 func mapToStruct(mp interface{}, v interface{}) {
 	js, _ := json.Marshal(mp)
-	_ = json.Unmarshal(js, v)
+	err := json.Unmarshal(js, v)
+	if err != nil {
+		fmt.Println(mp)
+	}
 }
 
 func (game Game) ChooseDeck(heroIds []int) {
@@ -261,13 +364,13 @@ func (game Game) PutUnit(typeId, pathId int) {
 	msg := Message{Name: "putUnit", Args: map[string]int{"typeId": typeId, "pathId": pathId}, Turn: game.currentTurn} //TODO named args?
 	game.sender <- msg
 }
-func (game Game) CastUnitSpell(unitId, pathId int, cell Cell, spellId int) {
+func (game Game) CastUnitSpell(unitId, pathId int, cell *Cell, spellId int) {
 	msg := Message{Name: "castSpell",
 		Args: map[string]interface{}{"typeId": spellId, "cell": cell, "unitId": unitId, "pathId": pathId}, Turn: game.currentTurn}
 	game.sender <- msg
 }
 
-func (game Game) CastAreaSpell(center Cell, spellId int) {
+func (game Game) CastAreaSpell(center *Cell, spellId int) {
 	msg := Message{Name: "castSpell",
 		Args: map[string]interface{}{"typeId": spellId, "cell": center}, Turn: game.currentTurn}
 	game.sender <- msg
@@ -284,29 +387,44 @@ func (game Game) UpgradeUnitDamage(unitId int) {
 }
 
 func (game Game) GetSpellById(typeId int) *Spell {
+	if ret, ok := game.spellById[typeId]; ok {
+		return ret
+	}
 	for _, spell := range game.spells {
 		if spell.TypeId == typeId {
+			game.spellById[typeId] = spell
 			return spell
 		}
 	}
+	game.spellById[typeId] = nil
 	return nil
 }
 
 func (game Game) GetBaseUnitById(typeId int) *BaseUnit {
+	if ret, ok := game.baseUnitById[typeId]; ok {
+		return ret
+	}
 	for _, baseUnit := range game.baseUnits {
 		if baseUnit.TypeId == typeId {
+			game.baseUnitById[typeId] = baseUnit
 			return baseUnit
 		}
 	}
+	game.baseUnitById[typeId] = nil
 	return nil
 }
 
-func (game Game) GetPathById(pathId int) *Path {
+func (game Game) getPathById(pathId int) *Path {
+	if ret, ok := game.pathById[pathId]; ok {
+		return ret
+	}
 	for _, path := range game.Map.Paths {
 		if pathId == path.Id {
+			game.pathById[pathId] = path
 			return path
 		}
 	}
+	game.pathById[pathId] = nil
 	return nil
 }
 
@@ -344,38 +462,46 @@ func (game Game) getPathToFriend(playerId int) *Path {
 	return nil
 }
 
-func (game Game) GetPathsCrossingCell(cell Cell) []*Path {
+func (game Game) GetPathsCrossingCell(cell *Cell) []*Path {
+	if ret, ok := game.pathsCrossing[*cell]; ok {
+		return ret
+	}
 	paths := make([]*Path, 0)
 	for _, path := range game.Map.Paths {
 		for _, cell1 := range path.Cells {
-			if *cell1 == cell {
+			if *cell1 == *cell {
 				paths = append(paths, path)
 				break
 			}
 		}
 	}
+	game.pathsCrossing[*cell] = paths
 	return paths
 }
 
-func (game Game) GetCellUnits(cell Cell) []*Unit {
+func (game Game) GetCellUnits(cell *Cell) []*Unit {
 	if !game.isValid(cell) {
 		return []*Unit{}
 	}
 	return game.Map.UnitsInCell[cell.Row][cell.Col]
 }
 
-func (game Game) GetShortestPathToCell(playerId int, cell Cell) *Path {
+func (game Game) GetShortestPathToCell(playerId int, cell *Cell) *Path {
+	if ret, ok := game.shortestPaths[playerId][*cell]; ok {
+		return ret
+	}
+
 	var ans *Path
 	var minAns = -1
-	//friendPathLen := len(game.getPathToFriend(playerId).Cells)
+	friendPathLen := len(game.getPathToFriend(playerId).Cells)
 	for _, path := range game.Map.Paths {
 		startCell := *path.Cells[0]
 		endCell := *path.Cells[len(path.Cells)-1]
 		playerCell := game.players[playerId].GetPlayerPosition()
-		//friendCell := game.players[game.getFriendId(playerId)].GetPlayerPosition()
+		friendCell := game.players[game.getFriendId(playerId)].GetPlayerPosition()
 		if startCell == playerCell {
 			for i := range path.Cells {
-				if *path.Cells[i] == cell && (minAns == -1 || i < minAns) {
+				if *path.Cells[i] == *cell && (minAns == -1 || i < minAns) {
 					minAns = i
 					ans = path
 					break
@@ -385,16 +511,16 @@ func (game Game) GetShortestPathToCell(playerId int, cell Cell) *Path {
 		if endCell == playerCell {
 			lng := len(path.Cells) - 1
 			for i := range path.Cells {
-				if *path.Cells[lng-i] == cell && (minAns == -1 || i < minAns) {
+				if *path.Cells[lng-i] == *cell && (minAns == -1 || i < minAns) {
 					minAns = i
 					ans = path
 					break
 				}
 			}
 		}
-		/*if startCell == friendCell {
+		if startCell == friendCell {
 			for i := range path.Cells {
-				if *path.Cells[i] == cell && (minAns == -1 || i+friendPathLen < minAns) {
+				if *path.Cells[i] == *cell && (minAns == -1 || i+friendPathLen < minAns) {
 					minAns = i + friendPathLen
 					ans = path
 					break
@@ -404,54 +530,27 @@ func (game Game) GetShortestPathToCell(playerId int, cell Cell) *Path {
 		if endCell == friendCell {
 			lng := len(path.Cells) - 1
 			for i := range path.Cells {
-				if *path.Cells[lng-i] == cell && (minAns == -1 || i+friendPathLen < minAns) {
+				if *path.Cells[lng-i] == *cell && (minAns == -1 || i+friendPathLen < minAns) {
 					minAns = i + friendPathLen
 					ans = path
 					break
 				}
 			}
-		}*/ //TODO paths from friend?
+		} //TODO paths from friend?
 	}
+	game.shortestPaths[playerId][*cell] = ans
 	return ans
-}
-
-func (game Game) GetRemainingAP(playerId int) int {
-	return game.players[playerId].Ap
-}
-
-func (game Game) GetHand() []BaseUnit {
-	hand := make([]BaseUnit, 0)
-	for _, id := range game.players[game.myId].Hand {
-		hand = append(hand, *game.GetBaseUnitById(id))
-	}
-	return hand
-}
-
-func (game Game) GetDeck() []BaseUnit {
-	deck := make([]BaseUnit, 0)
-	for _, id := range game.players[game.myId].Deck {
-		deck = append(deck, *game.GetBaseUnitById(id))
-	}
-	return deck
 }
 
 func (game Game) GetCurrentTurn() int {
 	return game.currentTurn
 }
 
-func (game Game) GetMaxTurns() int {
-	return game.gameConstants.MaxTurns
-}
-
-func (game Game) GetTurnTimeout() int64 {
-	return game.gameConstants.TurnTimeout
-}
-
 func (game Game) GetRemainingTime() int64 {
 	if game.currentTurn == 0 {
-		return game.GetPickTimeout() + (time.Now().UnixNano()-game.startTime)/1e6
+		return game.gameConstants.PickTimeout + (time.Now().UnixNano()-game.startTime)/1e6
 	} else {
-		return game.GetTurnTimeout() + (time.Now().UnixNano()-game.startTime)/1e6
+		return game.gameConstants.TurnTimeout + (time.Now().UnixNano()-game.startTime)/1e6
 	}
 }
 
@@ -471,16 +570,12 @@ func (game Game) GetFriendReceivedSpell() *Spell {
 	return game.friendReceivedSpell
 }
 
-func (game Game) GetPickTimeout() int64 {
-	return game.gameConstants.PickTimeout
-}
-
-func (game Game) GetAreaSpellTargets(center Cell, spellId int) []*Unit {
+func (game Game) GetAreaSpellTargets(center *Cell, spellId int) []*Unit {
 	units := make([]*Unit, 0)
 	spell := game.GetSpellById(spellId)
 	for i := center.Row - spell.Range; i <= center.Row+spell.Range; i++ {
 		for j := center.Col - spell.Range; j <= center.Col+spell.Range; j++ {
-			units = append(units, game.GetCellUnits(Cell{i, j})...)
+			units = append(units, game.GetCellUnits(&Cell{i, j})...)
 		}
 	}
 	return units
@@ -494,61 +589,34 @@ func (game Game) GetDamageUpgradeNumber() int {
 	return game.availableDamageUpgrades
 }
 
-func (game Game) GetSpellsList() []*Spell {
-	return game.players[game.myId].Spells
-}
-
-func (game Game) GetSpells() map[Spell]int {
-	spellMap := make(map[Spell]int, 0)
-	for _, spell := range game.GetSpellsList() {
-		var val, ok = spellMap[*spell]
-		if !ok {
-			spellMap[*spell] = 1
-		} else {
-			spellMap[*spell] = val + 1
-		}
-	}
-	return spellMap
-}
-
-func (game Game) GetPlayerDuplicateUnits(playerId int) []*Unit {
-	res := make([]*Unit, 0)
-	for _, unit := range game.Map.Units {
-		if unit.IsDuplicate && unit.PlayerId == playerId {
-			res = append(res, unit)
-		}
-	}
-	return res
-}
-
-func (game Game) GetPlayerHastedUnits(playerId int) []*Unit {
-	res := make([]*Unit, 0)
-	for _, unit := range game.Map.Units {
-		if unit.IsHasted && unit.PlayerId == playerId {
-			res = append(res, unit)
-		}
-	}
-	return res
-}
-
-func (game Game) isValid(cell Cell) bool {
+func (game Game) isValid(cell *Cell) bool {
 	return cell.Row >= 0 && cell.Row < game.GetMap().RowNum && cell.Col >= 0 && cell.Col < game.GetMap().ColNum //TODO move to Map?
 }
 
 func (game Game) GetUnitById(unitId int) *Unit {
+	if ret, ok := game.unitById[unitId]; ok {
+		return ret
+	}
 	for _, unit := range game.Map.Units {
 		if unit.UnitId == unitId {
+			game.unitById[unitId] = unit
 			return unit
 		}
 	}
+	game.unitById[unitId] = nil
 	return nil
 }
 func (game Game) getCastSpellById(id int) *CastSpell {
+	if ret, ok := game.castSpellById[id]; ok {
+		return ret
+	}
 	for _, c := range game.castSpells {
 		if (*c).GetId() == id {
+			game.castSpellById[id] = c
 			return c
 		}
 	}
+	game.castSpellById[id] = nil
 	return nil
 }
 

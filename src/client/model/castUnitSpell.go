@@ -1,15 +1,13 @@
 package model
 
 type CastUnitSpell struct {
-	TypeId        int `json:"typeId"`
 	Spell         *Spell
 	Id            int   `json:"id"`
 	CasterId      int   `json:"casterId"`
 	Cell          *Cell `json:"cell"`
-	AffectedUnits []int `json:"affectedUnits"`
-	UnitId        int   `json:"unitId"`          //TODO Unit obj
-	PathId        int   `json:"pathId"`          //TODO Path obj
-	CastThisTurn  bool  `json:"wasCastThisTurn"` //TODO remove
+	AffectedUnits []*Unit
+	Unit        *Unit
+	Path        *Path
 }
 
 func (c CastUnitSpell) GetId() int {
@@ -28,10 +26,6 @@ func (c CastUnitSpell) GetCell() *Cell {
 	return c.Cell
 }
 
-func (c CastUnitSpell) GetAffectedUnits() []int {
+func (c CastUnitSpell) GetAffectedUnits() []*Unit {
 	return c.AffectedUnits
-}
-
-func (c CastUnitSpell) WasCastThisTurn() bool {
-	return c.WasCastThisTurn()
 }

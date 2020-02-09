@@ -5,6 +5,5 @@ type CastSpell interface { //TODO which methods to keep?
 	GetSpell() *Spell
 	GetCasterId() int
 	GetCell() *Cell
-	GetAffectedUnits() []int
-	WasCastThisTurn() bool
+	GetAffectedUnits() []*Unit
 }
