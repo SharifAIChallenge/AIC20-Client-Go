@@ -7,6 +7,6 @@ type King struct {
 	Range      int   `json:"range"`
 	IsAlive    bool  `json:"isAlive"`
 	PlayerId   int   `json:"playerId"`
-	Target     *Unit `json:"targetUnit"` //TODO wtf is targetCell
+	Target     *Unit `json:"targetUnit"`
 	TargetCell *Cell `json:"targetCell"`
 }

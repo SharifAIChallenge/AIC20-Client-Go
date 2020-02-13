@@ -2,7 +2,7 @@ package model
 
 type Unit struct {
 	BaseUnit       *BaseUnit `json:"baseUnit"`
-	Cell           *Cell     `json:"cell"` //TODO only pointer?( or empty cell)
+	Cell           *Cell     `json:"cell"`
 	UnitId         int       `json:"unitId"`
 	Hp             int       `json:"hp"`
 	Path           *Path     `json:"path"`
@@ -16,5 +16,5 @@ type Unit struct {
 	Attack         int          `json:"attack"`
 	IsDuplicate    bool         `json:"isDuplicate"`
 	IsHasted       bool         `json:"isHasted"`
-	AffectedSpells []*CastSpell `json:"affectedCastSpells"` //TODO CastSpellsOnUnit
+	AffectedSpells []*CastSpell `json:"affectedCastSpells"`
 }

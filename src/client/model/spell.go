@@ -1,14 +1,14 @@
 package model
 
 type Spell struct {
-	Type       string `json:"type"` //TODO ENUM
+	Type       string `json:"type"`
 	TypeId     int    `json:"typeId"`
 	Duration   int    `json:"duration"`
 	Priority   int    `json:"priority"`
 	Range      int    `json:"range"`
 	Power      int    `json:"power"`
-	IsDamaging bool   `json:"isDamaging"` //TODO json
-	Target     string `json:"target"`     //TODO ENUM
+	IsDamaging bool   `json:"isDamaging"`
+	Target     string `json:"target"`
 }
 
 func (spell Spell) IsAreaSpell() bool {

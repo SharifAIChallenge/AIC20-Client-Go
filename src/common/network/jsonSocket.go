@@ -1,6 +1,5 @@
 package network
 
-//TODO implement errors and error handling
 import (
 	. "./data"
 	"bufio"
@@ -9,7 +8,7 @@ import (
 	"strconv"
 )
 
-const tag = "JsonSocket" //TODO remove
+const tag = "JsonSocket"
 
 type JsonSocket struct {
 	socket net.Conn
@@ -17,7 +16,7 @@ type JsonSocket struct {
 }
 
 func NewJsonSocket(host string, port int) *JsonSocket {
-	socket, _ := net.Dial("tcp", host+":"+strconv.Itoa(port)) //TODO for error != nil?
+	socket, _ := net.Dial("tcp", host+":"+strconv.Itoa(port))
 	return &JsonSocket{socket: socket}
 }
 
@@ -26,7 +25,7 @@ func (jsonSocket JsonSocket) Close() {
 }
 
 func (jsonSocket JsonSocket) Send(msg Message) {
-	js, _ := json.Marshal(msg) //TODO should we convert to utf8 or is it okay already?
+	js, _ := json.Marshal(msg)
 	_, _ = jsonSocket.socket.Write(append(js, byte('\000')))
 }
 

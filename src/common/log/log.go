@@ -39,6 +39,5 @@ func log(priority int, tag string, msg string) {
 	if priority < LogLevel {
 		return
 	}
-	//TODO DEV_MODE
 	fmt.Errorf("%s : %s - %s", Levels[priority], tag, msg)
 }

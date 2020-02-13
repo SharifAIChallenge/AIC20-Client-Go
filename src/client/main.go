@@ -14,7 +14,6 @@ func main() {
 	run(getArgs())
 }
 func run(args []string) {
-	//TODO verbose
 	port, _ := strconv.Atoi(args[1])
 	retryDelay, _ := strconv.ParseInt(args[3], 10, 64)
 	controller := Controller{host: args[0], port: port, token: args[2], retryDelay: retryDelay}

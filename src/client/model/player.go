@@ -6,8 +6,8 @@ type Player struct {
 	Hand               []*BaseUnit          `json:"hand"`
 	Ap                 int            `json:"ap"`
 	King               *King          `json:"king"`
-	PathsFromPlayer    []*Path        `json:"pathsFromPlayer"` //TODO
-	PathToFriend       *Path          `json:"pathToFriend"`    //TODO
+	PathsFromPlayer    []*Path        `json:"pathsFromPlayer"`
+	PathToFriend       *Path          `json:"pathToFriend"`
 	Units              []*Unit        `json:"units"`
 	CastAreaSpell      *CastAreaSpell `json:"castAreaSpell"`
 	CastUnitSpell      *CastUnitSpell `json:"castUnitSpell"`
@@ -31,7 +31,7 @@ func (player Player) getHp() int {
 }
 
 func (player Player) GetPlayerPosition() Cell {
-	return *player.King.Center //TODO use getters?
+	return *player.King.Center
 }
 
 func (player Player) GetSpellCount(spellId int) int {

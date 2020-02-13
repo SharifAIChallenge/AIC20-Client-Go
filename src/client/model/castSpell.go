@@ -1,6 +1,6 @@
 package model
 
-type CastSpell interface { //TODO which methods to keep?
+type CastSpell interface {
 	GetId() int
 	GetSpell() *Spell
 	GetCasterId() int

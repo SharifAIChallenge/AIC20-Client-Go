@@ -46,7 +46,7 @@ func NewGame(sender chan Message) *Game {
 }
 
 func (game *Game) HandleInitMessage(msg Message) {
-	root := msg.Args.(map[string]interface{}) //TODO make it work?
+	root := msg.Args.(map[string]interface{})
 	mapToStruct(root["gameConstants"], &game.gameConstants)
 	mapToStruct(root["map"], &game.Map)
 	game.Map.Cells = make([][]*Cell,0)
@@ -121,7 +121,7 @@ func (game *Game) HandleTurnMessage(msg Message) {
 			game.Map.UnitsInCell[i] = append(game.Map.UnitsInCell[i], make([]*Unit, 0))
 		}
 	}
-	units := root["units"].([]interface{}) // get baseUnit by TypeId
+	units := root["units"].([]interface{})
 	for _, unit := range units {
 		var typeId int
 		mapToStruct(unit.(map[string]interface{})["typeId"], &typeId)
@@ -167,7 +167,7 @@ func (game *Game) HandleTurnMessage(msg Message) {
 		}
 		game.Map.Units = append(game.Map.Units, &tmpUnit)
 		game.Map.UnitsInCell[tmpUnit.Cell.Row][tmpUnit.Cell.Col] =
-			append(game.Map.UnitsInCell[tmpUnit.Cell.Row][tmpUnit.Cell.Col], &tmpUnit) //TODO pointers or ID
+			append(game.Map.UnitsInCell[tmpUnit.Cell.Row][tmpUnit.Cell.Col], &tmpUnit)
 	}
 
 	for _, unit := range units {
@@ -192,7 +192,7 @@ func (game *Game) HandleTurnMessage(msg Message) {
 		}
 	}
 
-	deadUnits := root["diedUnits"].([]interface{}) // get baseUnit by TypeId
+	deadUnits := root["diedUnits"].([]interface{})
 	for _, unit := range deadUnits {
 		var typeId int
 		mapToStruct(unit.(map[string]interface{})["typeId"], &typeId)
@@ -340,7 +340,7 @@ func (game Game) ChooseDeck(heroIds []int) {
 	for _, v := range heroIds {
 		i = append(i, v)
 	}
-	msg := Message{Name: "pick", Args: map[string]interface{}{"units": i}} //TODO check server message format
+	msg := Message{Name: "pick", Args: map[string]interface{}{"units": i}}
 	game.sender <- msg
 }
 
@@ -361,7 +361,7 @@ func (game Game) GetSecondEnemy() *Player {
 }
 
 func (game Game) PutUnit(typeId, pathId int) {
-	msg := Message{Name: "putUnit", Args: map[string]int{"typeId": typeId, "pathId": pathId}, Turn: game.currentTurn} //TODO named args?
+	msg := Message{Name: "putUnit", Args: map[string]int{"typeId": typeId, "pathId": pathId}, Turn: game.currentTurn}
 	game.sender <- msg
 }
 func (game Game) CastUnitSpell(unitId, pathId int, cell *Cell, spellId int) {
@@ -429,10 +429,10 @@ func (game Game) getPathById(pathId int) *Path {
 }
 
 func (game Game) getFriendId(playerId int) int {
-	return playerId ^ 2 //TODO make sure this is valid
+	return playerId ^ 2
 }
 
-func (game Game) getPathsFromPlayer(playerId int) []*Path { //TODO friend paths
+func (game Game) getPathsFromPlayer(playerId int) []*Path {
 	paths := make([]*Path, 0)
 	friendPath := game.getPathToFriend(playerId)
 	for _, path := range game.Map.Paths {
@@ -536,7 +536,7 @@ func (game Game) GetShortestPathToCell(playerId int, cell *Cell) *Path {
 					break
 				}
 			}
-		} //TODO paths from friend?
+		}
 	}
 	game.shortestPaths[playerId][*cell] = ans
 	return ans
@@ -590,7 +590,7 @@ func (game Game) GetDamageUpgradeNumber() int {
 }
 
 func (game Game) isValid(cell *Cell) bool {
-	return cell.Row >= 0 && cell.Row < game.GetMap().RowNum && cell.Col >= 0 && cell.Col < game.GetMap().ColNum //TODO move to Map?
+	return cell.Row >= 0 && cell.Row < game.GetMap().RowNum && cell.Col >= 0 && cell.Col < game.GetMap().ColNum
 }
 
 func (game Game) GetUnitById(unitId int) *Unit {
@@ -621,7 +621,7 @@ func (game Game) getCastSpellById(id int) *CastSpell {
 }
 
 func (game Game) isUnitSpell(typeId int) bool {
-	return game.GetSpellById(typeId).Type == "TELE" //TODO avoid hard coding
+	return game.GetSpellById(typeId).Type == "TELE"
 }
 
 func (game Game) GetAllBaseUnits() []*BaseUnit {

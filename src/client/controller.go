@@ -52,13 +52,11 @@ func (controller Controller) handleMessages() {
 }
 
 func (controller Controller) handleInitMessage(msg Message) {
-	//TODO make new Game
 	controller.game.HandleInitMessage(msg)
 	controller.pick(controller.game)
 }
 
 func (controller Controller) handleTurnMessage(msg Message) {
-	//TODO make new game
 	controller.game.HandleTurnMessage(msg)
 	controller.turn(controller.game)
 }

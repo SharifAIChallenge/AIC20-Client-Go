@@ -10,7 +10,7 @@ type Map struct {
 	Cells       [][]*Cell   `json:"cells"`
 }
 
-func (mp Map) GetCell(row, col int) *Cell { //TODO Cell or *Cell?
+func (mp Map) GetCell(row, col int) *Cell {
 	cell := mp.Cells[row][col]
 	return cell
 }

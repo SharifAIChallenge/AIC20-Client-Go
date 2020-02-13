@@ -13,7 +13,7 @@ type Network struct {
 	host           string
 	token          string
 	socket         JsonSocket
-	isConnected    bool //TODO should i add number of exceptions?
+	isConnected    bool
 	terminateFlag  bool
 	messagesToSend chan Message
 }
@@ -26,13 +26,12 @@ func (network Network) connect() {
 	init := client.Get()
 	if init.Name != "init" {
 		client.Close()
-		//TODO throw error? exception? use try catch?
 	}
 	network.isConnected = true
 	network.socket = client
 	network.messageHandler <- init
-	go network.startReceiving() //TODO is this okay?
-	go network.startSending()   //TODO should this be in another place?
+	go network.startReceiving()
+	go network.startSending()
 }
 
 func (network Network) startReceiving() {
@@ -42,7 +41,7 @@ func (network Network) startReceiving() {
 }
 
 func (network Network) doReceive() {
-	msg := network.socket.Get() //TODO errors and error handling?
+	msg := network.socket.Get()
 	network.messageHandler <- msg
 }
 
@@ -56,4 +55,3 @@ func (network Network) terminate() {
 	network.terminateFlag = true
 }
 
-//TODO handleIOE?
