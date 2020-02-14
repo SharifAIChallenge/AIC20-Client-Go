@@ -548,9 +548,9 @@ func (game Game) GetCurrentTurn() int {
 
 func (game Game) GetRemainingTime() int64 {
 	if game.currentTurn == 0 {
-		return game.gameConstants.PickTimeout + (time.Now().UnixNano()-game.startTime)/1e6
+		return game.gameConstants.PickTimeout - (time.Now().UnixNano()-game.startTime)/1e6
 	} else {
-		return game.gameConstants.TurnTimeout + (time.Now().UnixNano()-game.startTime)/1e6
+		return game.gameConstants.TurnTimeout - (time.Now().UnixNano()-game.startTime)/1e6
 	}
 }
 
