@@ -20,6 +20,7 @@ type Controller struct {
 	network        *Network
 	sender         chan Message
 	messageHandler chan Message
+	initMessage    *Message
 }
 
 func (controller Controller) Start() {
@@ -51,17 +52,26 @@ func (controller Controller) handleMessages() {
 	}
 }
 
-func (controller Controller) handleInitMessage(msg Message) {
+func (controller *Controller) handleInitMessage(msg Message) {
+	controller.initMessage = &msg
 	controller.game.HandleInitMessage(msg)
 	controller.pick(controller.game)
 }
 
-func (controller Controller) handleTurnMessage(msg Message) {
+func (controller *Controller) handleTurnMessage(msg Message) {
+	newGame := NewGame(controller.sender)
+	newGame.HandleInitMessage(*controller.initMessage)
+	newGame.ShortestPaths = controller.game.ShortestPaths
+	controller.game = newGame
 	controller.game.HandleTurnMessage(msg)
 	controller.turn(controller.game)
 }
 
-func (controller Controller) handleShutdownMessage(msg Message) {
+func (controller *Controller) handleShutdownMessage(msg Message) {
+	newGame := NewGame(controller.sender)
+	newGame.HandleInitMessage(*controller.initMessage)
+	newGame.ShortestPaths = controller.game.ShortestPaths
+	controller.game = newGame
 	info := msg.Args.(map[string]interface{})
 	controller.game.HandleTurnMessage(Message{Name: msg.Name, Args: info["turnMessage"], Turn: msg.Turn})
 	var scoresList []map[string]int

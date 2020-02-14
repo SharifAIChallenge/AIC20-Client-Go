@@ -29,7 +29,7 @@ type Game struct {
 	myId, friendId, firstEnemy, secondEnemy int
 	receivedSpell, friendReceivedSpell      *Spell
 
-	shortestPaths [4]map[Cell]*Path
+	ShortestPaths [4]map[Cell]int
 	pathsCrossing map[Cell][]*Path
 
 	unitById      map[int]*Unit
@@ -49,11 +49,11 @@ func (game *Game) HandleInitMessage(msg Message) {
 	root := msg.Args.(map[string]interface{})
 	mapToStruct(root["gameConstants"], &game.gameConstants)
 	mapToStruct(root["map"], &game.Map)
-	game.Map.Cells = make([][]*Cell,0)
+	game.Map.Cells = make([][]*Cell, 0)
 	for i := 0; i < game.Map.RowNum; i++ {
-		game.Map.Cells = append(game.Map.Cells,make([]*Cell,0))
+		game.Map.Cells = append(game.Map.Cells, make([]*Cell, 0))
 		for j := 0; j < game.Map.ColNum; j++ {
-			game.Map.Cells[i] = append(game.Map.Cells[i] , &Cell{Row: i, Col: j})
+			game.Map.Cells[i] = append(game.Map.Cells[i], &Cell{Row: i, Col: j})
 		}
 	}
 	for _, king := range game.Map.Kings {
@@ -78,7 +78,7 @@ func (game *Game) HandleInitMessage(msg Message) {
 	for i := 0; i < 4; i++ {
 		game.players[i].PathToFriend = game.getPathToFriend(i)
 		game.players[i].PathsFromPlayer = game.getPathsFromPlayer(i)
-		game.shortestPaths[i] = make(map[Cell]*Path)
+		game.ShortestPaths[i] = make(map[Cell]int)
 	}
 	game.startTime = time.Now().UnixNano()
 }
@@ -487,8 +487,8 @@ func (game Game) GetCellUnits(cell *Cell) []*Unit {
 }
 
 func (game Game) GetShortestPathToCell(playerId int, cell *Cell) *Path {
-	if ret, ok := game.shortestPaths[playerId][*cell]; ok {
-		return ret
+	if ret, ok := game.ShortestPaths[playerId][*cell]; ok {
+		return game.getPathById(ret)
 	}
 
 	var ans *Path
@@ -538,7 +538,7 @@ func (game Game) GetShortestPathToCell(playerId int, cell *Cell) *Path {
 			}
 		}
 	}
-	game.shortestPaths[playerId][*cell] = ans
+	game.ShortestPaths[playerId][*cell] = ans.Id
 	return ans
 }
 
