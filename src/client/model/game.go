@@ -3,7 +3,6 @@ package model
 import (
 	. "../../common/network/data"
 	"encoding/json"
-	"fmt"
 	"time"
 )
 
@@ -83,8 +82,6 @@ func (game *Game) HandleInitMessage(msg Message) {
 	game.startTime = time.Now().UnixNano()
 }
 func (game *Game) HandleTurnMessage(msg Message) {
-	fmt.Println("Received Turn Message!")
-
 	game.unitById = make(map[int]*Unit)
 	game.castSpellById = make(map[int]*CastSpell)
 	for i := 0; i < 4; i++ {
@@ -329,10 +326,7 @@ func (game *Game) HandleTurnMessage(msg Message) {
 
 func mapToStruct(mp interface{}, v interface{}) {
 	js, _ := json.Marshal(mp)
-	err := json.Unmarshal(js, v)
-	if err != nil {
-		fmt.Println(mp)
-	}
+	_ = json.Unmarshal(js, v)
 }
 
 func (game Game) ChooseHandById(typeIds []int) {
@@ -445,9 +439,9 @@ func (game Game) getPathsFromPlayer(playerId int) []*Path {
 	friendPath := game.getPathToFriend(playerId)
 	for _, path := range game.Map.Paths {
 		if path.Id != friendPath.Id {
-			startCell := path.Cells[0]
-			endCell := path.Cells[len(path.Cells)-1]
-			playerCell := game.players[playerId].GetPlayerPosition()
+			startCell := *path.Cells[0]
+			endCell := *path.Cells[len(path.Cells)-1]
+			playerCell := *game.players[playerId].GetPlayerPosition()
 			if startCell == playerCell {
 				paths = append(paths, path)
 			}
@@ -459,17 +453,19 @@ func (game Game) getPathsFromPlayer(playerId int) []*Path {
 	return paths
 }
 func reversePath(cells []*Cell) []*Cell {
-	for i, j := 0, len(cells)-1; i < j; i, j = i+1, j-1 {
-		cells[i], cells[j] = cells[j], cells[i]
+	n := len(cells)
+	newCells := make([]*Cell, n)
+	for i := 0; i < n; i++ {
+		newCells[i] = cells[n-1-i]
 	}
-	return cells
+	return newCells
 }
 func (game Game) getPathToFriend(playerId int) *Path {
 	for i, path := range game.Map.Paths {
-		startCell := path.Cells[0]
-		endCell := path.Cells[len(path.Cells)-1]
-		myCell := game.players[playerId].GetPlayerPosition()
-		friendCell := game.players[game.getFriendId(playerId)].GetPlayerPosition()
+		startCell := *path.Cells[0]
+		endCell := *path.Cells[len(path.Cells)-1]
+		myCell := *game.players[playerId].GetPlayerPosition()
+		friendCell := *game.players[game.getFriendId(playerId)].GetPlayerPosition()
 		if startCell == myCell && endCell == friendCell {
 			return game.Map.Paths[i]
 		}
@@ -505,11 +501,12 @@ func (game Game) GetCellUnits(cell *Cell) []*Unit {
 }
 
 func (game Game) GetShortestPathToCell(playerId int, cell *Cell) *Path {
-	playerCell := game.players[playerId].GetPlayerPosition()
-	friendCell := game.players[game.getFriendId(playerId)].GetPlayerPosition()
+	playerCell := *game.players[playerId].GetPlayerPosition()
+	friendCell := *game.players[game.getFriendId(playerId)].GetPlayerPosition()
 	if ret, ok := game.ShortestPaths[playerId][*cell]; ok {
 		path := game.getPathById(ret)
-		if path.Cells[0] == playerCell || path.Cells[0] == friendCell {
+		startCell := *path.Cells[0]
+		if startCell == playerCell || startCell == friendCell {
 			return path
 		} else {
 			return &Path{Id: path.Id, Cells: reversePath(path.Cells)}
@@ -519,8 +516,8 @@ func (game Game) GetShortestPathToCell(playerId int, cell *Cell) *Path {
 	var minAns = -1
 	friendPathLen := len(game.getPathToFriend(playerId).Cells)
 	for _, path := range game.Map.Paths {
-		startCell := path.Cells[0]
-		endCell := path.Cells[len(path.Cells)-1]
+		startCell := *path.Cells[0]
+		endCell := *path.Cells[len(path.Cells)-1]
 		if startCell == playerCell {
 			for i := range path.Cells {
 				if *path.Cells[i] == *cell && (minAns == -1 || i < minAns) {
@@ -562,7 +559,8 @@ func (game Game) GetShortestPathToCell(playerId int, cell *Cell) *Path {
 	}
 	if ans != nil {
 		game.ShortestPaths[playerId][*cell] = ans.Id
-		if ans.Cells[0] != playerCell && ans.Cells[0] != friendCell {
+		startCell := *ans.Cells[0]
+		if startCell != playerCell && startCell != friendCell {
 			ans = &Path{Id: ans.Id, Cells: reversePath(ans.Cells)}
 		}
 	}
