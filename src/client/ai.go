@@ -18,17 +18,17 @@ func pick(world model.World) {
 	cols = mp.ColNum
 
 	allBaseUnits := world.GetAllBaseUnits()
-	myDeck := make([]int, 0)
+	myHand := make([]int, 0)
 
 	//choosing all flying units
 	for _, baseUnit := range allBaseUnits {
 		if baseUnit.IsFlying {
-			myDeck = append(myDeck, baseUnit.TypeId)
+			myHand = append(myHand, baseUnit.TypeId)
 		}
 	}
 
 	// picking the chosen deck - rest of the deck will automatically be filled with random baseUnits
-	world.ChooseHandById(myDeck)
+	world.ChooseHandById(myHand)
 
 	//other preprocess
 	pathForMyUnits = world.GetFriend().PathsFromPlayer[0]
