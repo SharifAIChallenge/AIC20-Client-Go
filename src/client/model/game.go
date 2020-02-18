@@ -445,8 +445,8 @@ func (game Game) getPathsFromPlayer(playerId int) []*Path {
 	friendPath := game.getPathToFriend(playerId)
 	for _, path := range game.Map.Paths {
 		if path.Id != friendPath.Id {
-			startCell := *path.Cells[0]
-			endCell := *path.Cells[len(path.Cells)-1]
+			startCell := path.Cells[0]
+			endCell := path.Cells[len(path.Cells)-1]
 			playerCell := game.players[playerId].GetPlayerPosition()
 			if startCell == playerCell {
 				paths = append(paths, path)
@@ -466,8 +466,8 @@ func reversePath(cells []*Cell) []*Cell {
 }
 func (game Game) getPathToFriend(playerId int) *Path {
 	for i, path := range game.Map.Paths {
-		startCell := *path.Cells[0]
-		endCell := *path.Cells[len(path.Cells)-1]
+		startCell := path.Cells[0]
+		endCell := path.Cells[len(path.Cells)-1]
 		myCell := game.players[playerId].GetPlayerPosition()
 		friendCell := game.players[game.getFriendId(playerId)].GetPlayerPosition()
 		if startCell == myCell && endCell == friendCell {
@@ -505,18 +505,22 @@ func (game Game) GetCellUnits(cell *Cell) []*Unit {
 }
 
 func (game Game) GetShortestPathToCell(playerId int, cell *Cell) *Path {
+	playerCell := game.players[playerId].GetPlayerPosition()
+	friendCell := game.players[game.getFriendId(playerId)].GetPlayerPosition()
 	if ret, ok := game.ShortestPaths[playerId][*cell]; ok {
-		return game.getPathById(ret)
+		path := game.getPathById(ret)
+		if path.Cells[0] == playerCell || path.Cells[0] == friendCell {
+			return path
+		} else {
+			return &Path{Id: path.Id, Cells: reversePath(path.Cells)}
+		}
 	}
-
 	var ans *Path
 	var minAns = -1
 	friendPathLen := len(game.getPathToFriend(playerId).Cells)
 	for _, path := range game.Map.Paths {
-		startCell := *path.Cells[0]
-		endCell := *path.Cells[len(path.Cells)-1]
-		playerCell := game.players[playerId].GetPlayerPosition()
-		friendCell := game.players[game.getFriendId(playerId)].GetPlayerPosition()
+		startCell := path.Cells[0]
+		endCell := path.Cells[len(path.Cells)-1]
 		if startCell == playerCell {
 			for i := range path.Cells {
 				if *path.Cells[i] == *cell && (minAns == -1 || i < minAns) {
@@ -558,6 +562,9 @@ func (game Game) GetShortestPathToCell(playerId int, cell *Cell) *Path {
 	}
 	if ans != nil {
 		game.ShortestPaths[playerId][*cell] = ans.Id
+		if ans.Cells[0] != playerCell && ans.Cells[0] != friendCell {
+			ans = &Path{Id: ans.Id, Cells: reversePath(ans.Cells)}
+		}
 	}
 	return ans
 }

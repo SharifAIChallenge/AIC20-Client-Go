@@ -2,8 +2,8 @@ package model
 
 type Player struct {
 	PlayerId           int            `json:"playerId"`
-	Deck               []*BaseUnit          `json:"deck"`
-	Hand               []*BaseUnit          `json:"hand"`
+	Deck               []*BaseUnit    `json:"deck"`
+	Hand               []*BaseUnit    `json:"hand"`
 	Ap                 int            `json:"ap"`
 	King               *King          `json:"king"`
 	PathsFromPlayer    []*Path        `json:"pathsFromPlayer"`
@@ -19,7 +19,7 @@ type Player struct {
 	DamageUpgradedUnit *Unit          `json:"damageUpgradedUnit"`
 	UpgradeTokens      int            `json:"upgradeTokens"`
 	Spells             []*Spell       `json:"spells"`
-	spellCount map[int]int
+	spellCount         map[int]int
 }
 
 func (player Player) isAlive() bool {
@@ -30,12 +30,12 @@ func (player Player) getHp() int {
 	return player.King.Hp
 }
 
-func (player Player) GetPlayerPosition() Cell {
-	return *player.King.Center
+func (player Player) GetPlayerPosition() *Cell {
+	return player.King.Center
 }
 
 func (player Player) GetSpellCount(spellId int) int {
-	if ret,ok := player.spellCount[spellId];ok{
+	if ret, ok := player.spellCount[spellId]; ok {
 		return ret
 	}
 	cnt := 0
