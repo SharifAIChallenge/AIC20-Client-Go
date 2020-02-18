@@ -1,10 +1,11 @@
 package model
 
 import (
-	. "../../common/network/data"
 	"encoding/json"
 	"fmt"
 	"time"
+
+	. "../../common/network/data"
 )
 
 type Game struct {
@@ -335,7 +336,7 @@ func mapToStruct(mp interface{}, v interface{}) {
 	}
 }
 
-func (game Game) ChooseDeck(heroIds []int) {
+func (game Game) ChooseHand(heroIds []int) {
 	i := make([]interface{}, 0)
 	for _, v := range heroIds {
 		i = append(i, v)
