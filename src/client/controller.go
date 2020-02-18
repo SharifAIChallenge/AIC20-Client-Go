@@ -21,10 +21,12 @@ type Controller struct {
 	sender         chan Message
 	messageHandler chan Message
 	initMessage    *Message
+	terminate      chan bool
 }
 
-func (controller Controller) Start() {
+func (controller *Controller) Start() {
 	controller.messageHandler = make(chan Message)
+	controller.terminate = make(chan bool)
 	controller.network = &Network{messageHandler: controller.messageHandler,
 		host: controller.host, port: controller.port, token: controller.token, messagesToSend: make(chan Message)}
 	controller.sender = controller.network.messagesToSend
@@ -34,9 +36,10 @@ func (controller Controller) Start() {
 		controller.network.connect()
 		time.Sleep(time.Duration(controller.retryDelay) * time.Millisecond)
 	}
+	_ = <-controller.terminate
 }
 
-func (controller Controller) handleMessages() {
+func (controller *Controller) handleMessages() {
 	for {
 		msg := <-controller.messageHandler
 		switch msg.Name {
@@ -82,6 +85,7 @@ func (controller *Controller) handleShutdownMessage(msg Message) {
 	}
 	controller.end(controller.game, scores)
 	controller.network.terminate()
+	controller.terminate <- true
 	os.Exit(0)
 }
 

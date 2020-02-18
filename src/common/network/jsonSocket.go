@@ -15,9 +15,9 @@ type JsonSocket struct {
 	reader *bufio.Reader
 }
 
-func NewJsonSocket(host string, port int) *JsonSocket {
-	socket, _ := net.Dial("tcp", host+":"+strconv.Itoa(port))
-	return &JsonSocket{socket: socket}
+func NewJsonSocket(host string, port int) (*JsonSocket, error) {
+	socket, err := net.Dial("tcp", host+":"+strconv.Itoa(port))
+	return &JsonSocket{socket: socket}, err
 }
 
 func (jsonSocket JsonSocket) Close() {
