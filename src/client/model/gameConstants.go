@@ -11,4 +11,5 @@ type GameConstants struct {
 	RangeUpgradeAddition  int   `json:"rangeUpgradeAddition"`
 	DeckSize              int   `json:"deckSize"`
 	HandSize              int   `json:"handSize"`
+	APAddition            int   `json:"apAddition"`
 }
