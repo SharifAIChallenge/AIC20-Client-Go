@@ -448,23 +448,33 @@ func (game Game) getPathsFromPlayer(playerId int) []*Path {
 			startCell := *path.Cells[0]
 			endCell := *path.Cells[len(path.Cells)-1]
 			playerCell := game.players[playerId].GetPlayerPosition()
-			if startCell == playerCell || endCell == playerCell {
+			if startCell == playerCell {
 				paths = append(paths, path)
+			}
+			if endCell == playerCell {
+				paths = append(paths, &Path{Id: path.Id, Cells: reversePath(path.Cells)})
 			}
 		}
 	}
 	return paths
 }
-
+func reversePath(cells []*Cell) []*Cell {
+	for i, j := 0, len(cells)-1; i < j; i, j = i+1, j-1 {
+		cells[i], cells[j] = cells[j], cells[i]
+	}
+	return cells
+}
 func (game Game) getPathToFriend(playerId int) *Path {
 	for i, path := range game.Map.Paths {
 		startCell := *path.Cells[0]
 		endCell := *path.Cells[len(path.Cells)-1]
 		myCell := game.players[playerId].GetPlayerPosition()
 		friendCell := game.players[game.getFriendId(playerId)].GetPlayerPosition()
-		if (startCell == myCell && endCell == friendCell) ||
-			(startCell == friendCell && endCell == myCell) {
+		if startCell == myCell && endCell == friendCell {
 			return game.Map.Paths[i]
+		}
+		if startCell == friendCell && endCell == myCell {
+			return &Path{Id: path.Id, Cells: reversePath(path.Cells)}
 		}
 	}
 	return nil
@@ -546,7 +556,9 @@ func (game Game) GetShortestPathToCell(playerId int, cell *Cell) *Path {
 			}
 		}
 	}
-	game.ShortestPaths[playerId][*cell] = ans.Id
+	if ans != nil {
+		game.ShortestPaths[playerId][*cell] = ans.Id
+	}
 	return ans
 }
 
