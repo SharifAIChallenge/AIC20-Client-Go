@@ -28,7 +28,7 @@ func pick(world model.World) {
 	}
 
 	// picking the chosen deck - rest of the deck will automatically be filled with random baseUnits
-	world.ChooseDeck(myDeck)
+	world.ChooseHandById(myDeck)
 
 	//other preprocess
 	pathForMyUnits = world.GetFriend().PathsFromPlayer[0]

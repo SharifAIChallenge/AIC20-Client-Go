@@ -1,7 +1,8 @@
 package model
 
 type World interface {
-	ChooseDeck(heroIds []int)
+	ChooseHandById(typeIds []int)
+	ChooseHand(baseUnits []*BaseUnit)
 	GetMe() *Player
 	GetFriend() *Player
 	GetFirstEnemy() *Player

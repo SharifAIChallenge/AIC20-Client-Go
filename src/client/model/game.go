@@ -335,13 +335,21 @@ func mapToStruct(mp interface{}, v interface{}) {
 	}
 }
 
-func (game Game) ChooseDeck(heroIds []int) {
+func (game Game) ChooseHandById(typeIds []int) {
 	i := make([]interface{}, 0)
-	for _, v := range heroIds {
+	for _, v := range typeIds {
 		i = append(i, v)
 	}
 	msg := Message{Name: "pick", Args: map[string]interface{}{"units": i}}
 	game.sender <- msg
+}
+
+func (game Game) ChooseHand(baseUnits []*BaseUnit) {
+	typeIds := make([]int, 0)
+	for _, baseUnit := range baseUnits {
+		typeIds = append(typeIds, baseUnit.TypeId)
+	}
+	game.ChooseHandById(typeIds)
 }
 
 func (game Game) GetMe() *Player {
